@@ -1,0 +1,58 @@
+cabal-version:      2.4
+name:               procex
+version:            0.1.0.0
+
+synopsis: Ergonomic process launching with pipes, etc.
+
+bug-reports: https://github.com/L-as/procex
+
+license-files:      LICENSE
+license:            Apache-2.0
+author:             Las Safin
+maintainer:         las@protonmail.ch
+
+category:           System
+extra-source-files: CHANGELOG.md
+
+library
+    exposed-modules:  Procex.Core, Procex.Process, Procex.Execve, Procex.Quick, Procex.Prelude
+
+    default-extensions:
+        AllowAmbiguousTypes,
+        BangPatterns,
+        DataKinds,
+        DefaultSignatures,
+        DeriveFunctor,
+        ExtendedDefaultRules,
+        FlexibleContexts,
+        FlexibleInstances,
+        ForeignFunctionInterface,
+        FunctionalDependencies,
+        GADTs,
+        GeneralizedNewtypeDeriving,
+        KindSignatures,
+        LambdaCase,
+        MultiParamTypeClasses,
+        NamedFieldPuns,
+        NondecreasingIndentation,
+        OverloadedLabels,
+        OverloadedLists,
+        OverloadedStrings,
+        PartialTypeSignatures,
+        QuasiQuotes,
+        RankNTypes,
+        RecordWildCards,
+        ScopedTypeVariables,
+        TemplateHaskell,
+        TypeApplications
+    build-depends:
+        base,
+        bytestring,
+        unix,
+        utf8-string,
+        async,
+        containers
+    hs-source-dirs:   .
+    default-language: Haskell2010
+    ghc-options: -Wall -Wno-name-shadowing -Wno-tabs -Wno-redundant-record-wildcards
+    c-sources: cbits/glue.c
