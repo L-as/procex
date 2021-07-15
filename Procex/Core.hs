@@ -1,4 +1,4 @@
-module Procex.Core (Cmd, makeCmd', arg, unIOCmd, postCmd, run', passFd, passArgFd) where
+module Procex.Core (Cmd, makeCmd', passArg, unIOCmd, postCmd, run', passFd, passArgFd) where
 
 import Control.Concurrent.Async
 import Control.Exception.Base
@@ -77,8 +77,11 @@ postCmd f cmd = Cmd $ \args -> do
 run' :: Cmd -> IO (Async ProcessStatus)
 run' cmd = unCmd cmd emptyArgs
 
-arg :: ByteString -> Cmd -> Cmd
-arg str cmd = Cmd $ \args -> unCmd cmd $ argPrepend str args
+-- TODO: Execve without fork
+-- runReplace :: Cmd -> IO ()
+
+passArg :: ByteString -> Cmd -> Cmd
+passArg str cmd = Cmd $ \args -> unCmd cmd $ argPrepend str args
 
 passFd :: (Fd, Fd) -> Cmd -> Cmd
 passFd fdpair cmd = Cmd $ \args -> unCmd cmd $ fdPrepend fdpair args

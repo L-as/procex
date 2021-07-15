@@ -26,10 +26,10 @@ class QuickCmd a where
   quickCmd :: Cmd -> a
 
 instance QuickCmdArg String where
-  quickCmdArg s = arg $ B.fromString s
+  quickCmdArg s = passArg $ B.fromString s
 
 instance QuickCmdArg ByteString where
-  quickCmdArg = arg
+  quickCmdArg = passArg
 
 instance QuickCmdArg (Cmd -> Cmd) where
   quickCmdArg = id

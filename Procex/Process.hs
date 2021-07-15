@@ -29,16 +29,13 @@ makeCmd path = unIOCmd $ do
         case fullpath of
           Just p -> pure . B.fromStrict $ p
           Nothing -> throwIO $ userError (show path <> " does not exist")
-  pure $ makeCmd' fullpath & arg path & passFd (0, 0) & passFd (1, 1) & passFd (2, 2)
+  pure $ makeCmd' fullpath & passArg path & passFd (0, 0) & passFd (1, 1) & passFd (2, 2)
 
 run :: Cmd -> IO ()
 run cmd =
   run' cmd >>= wait >>= \case
     Exited ExitSuccess -> pure ()
     e -> throwIO . userError $ "Cmd failed " <> show e
-
---argpipe :: Cmd -> Cmd -> Cmd
---argpipe = undefined
 
 pipeArgFd :: Bool -> Fd -> Cmd -> Cmd -> Cmd
 pipeArgFd dir fd cmd1 cmd2 = unIOCmd $ do
