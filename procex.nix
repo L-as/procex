@@ -2,7 +2,7 @@
 , utf8-string
 }:
 mkDerivation {
-  pname = "las";
+  pname = "procex";
   version = "0.1.0.0";
   src = ./.;
   libraryHaskellDepends = [
