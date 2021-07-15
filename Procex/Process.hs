@@ -1,4 +1,4 @@
-module Procex.Process (makeCmd, run, pipeArgFd, pipeStrIn, pipeFd, pipeIn, pipeOut, capture) where
+module Procex.Process (makeCmd, run, pipeArgFd, pipeStrIn, pipeIn', pipeOut', pipeIn, pipeOut, capture) where
 
 import Control.Concurrent.Async
 import Control.Exception.Base
@@ -59,11 +59,17 @@ pipeFd dir fd1 fd2 cmd1 cmd2 = unIOCmd $ do
           _ <- async $ (either throwIO pure status2 >>= wait) `finally` cancel status1
           pure ()
 
+pipeIn' :: Fd -> Fd -> Cmd -> Cmd -> Cmd
+pipeIn' = pipeFd True
+
 pipeIn :: Cmd -> Cmd -> Cmd
-pipeIn = pipeFd True 1 0
+pipeIn = pipeIn' 1 0
+
+pipeOut' :: Fd -> Fd -> Cmd -> Cmd -> Cmd
+pipeOut' = pipeFd False
 
 pipeOut :: Cmd -> Cmd -> Cmd
-pipeOut = pipeFd False 0 1
+pipeOut = pipeOut' 0 1
 
 pipeStrIn :: ByteString -> Cmd -> Cmd
 pipeStrIn str cmd = unIOCmd $ do
