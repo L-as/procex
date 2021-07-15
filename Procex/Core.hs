@@ -1,4 +1,4 @@
-module Procex.Core (Cmd, makeCmd', passArg, unIOCmd, postCmd, run', passFd, passArgFd) where
+module Procex.Core (Cmd, makeCmd', passArg, unIOCmd, postCmd, run', runReplace, passFd, passArgFd) where
 
 import Control.Concurrent.Async
 import Control.Exception.Base
@@ -14,12 +14,12 @@ data Arg = ArgStr ByteString | ArgFd Fd deriving (Show)
 
 data Args = Args
   { args :: [Arg],
-    fds :: [(Fd, Fd)]
+    fds :: [(Fd, Fd)],
+    executor :: Execve
   }
-  deriving (Show)
 
 emptyArgs :: Args
-emptyArgs = Args {args = [], fds = []}
+emptyArgs = Args {args = [], fds = [], executor = forkexecve}
 
 fdPrepend :: (Fd, Fd) -> Args -> Args
 fdPrepend (x, y) args = args {fds = (x, y) : fds args}
@@ -33,7 +33,7 @@ argFdPrepend arg Args {..} = Args {args = ArgFd arg : args, ..}
 newtype Cmd = Cmd {unCmd :: Args -> IO (Async ProcessStatus)}
 
 makeCmd' :: ByteString -> Cmd
-makeCmd' path = Cmd $ \Args {args, fds} -> do
+makeCmd' path = Cmd $ \Args {args, fds, executor} -> do
   let sequentialize_fds :: [(Fd, Fd)] -> S.Seq Fd -> S.Seq Fd
       sequentialize_fds [] out = out
       sequentialize_fds ((new, old) : fds) out =
@@ -48,7 +48,7 @@ makeCmd' path = Cmd $ \Args {args, fds} -> do
           )
           (fds_seq, [] :: [ByteString])
           args
-  pid <- forkexec path args' Nothing (toList all_fds) -- FIXME there could be an asynchronous exception here
+  pid <- executor path args' Nothing (toList all_fds) -- FIXME there could be an asynchronous exception here
   pid <- case pid of
     Just x -> pure x
     Nothing -> throwErrno $ "Couldn't execute " <> show path <> " with args " <> show args' <> " with the following fds: " <> show all_fds
@@ -77,8 +77,10 @@ postCmd f cmd = Cmd $ \args -> do
 run' :: Cmd -> IO (Async ProcessStatus)
 run' cmd = unCmd cmd emptyArgs
 
--- TODO: Execve without fork
--- runReplace :: Cmd -> IO ()
+-- `execve` without `fork`
+-- Will not return unless an error occurs
+runReplace :: Cmd -> IO ()
+runReplace cmd = const () <$> unCmd cmd emptyArgs { executor = execve }
 
 passArg :: ByteString -> Cmd -> Cmd
 passArg str cmd = Cmd $ \args -> unCmd cmd $ argPrepend str args
