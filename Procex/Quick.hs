@@ -1,4 +1,4 @@
-module Procex.Quick (mq, ξ, QuickCmd, QuickCmdArg, quickCmd, quickCmdArg, ToByteString, toByteString) where
+module Procex.Quick (mq, ξ, QuickCmd, QuickCmdArg, quickCmd, quickCmdArg, ToByteString, toByteString, (<|), (|>), (<!|), (|!>), (<<<), (>>>)) where
 
 import Procex.Process
 import Procex.Core
@@ -6,6 +6,7 @@ import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy as B
 import qualified Data.ByteString.Lazy.UTF8 as B
 import qualified Data.ByteString as BS
+import System.IO (hClose)
 
 class ToByteString a where
   toByteString :: a -> B.ByteString
@@ -48,3 +49,28 @@ mq path = quickCmd $ makeCmd (toByteString path)
 
 ξ :: (QuickCmd a, ToByteString b) => b -> a
 ξ = mq
+
+infixl 1 <|
+infixl 1 <!|
+infixl 1 |>
+infixl 1 |!>
+infixl 1 <<<
+infixl 1 >>>
+
+(<|) :: QuickCmd a => Cmd -> Cmd -> a
+(<|) x y = quickCmd $ pipeIn 1 0 y x
+
+(<!|) :: QuickCmd a => Cmd -> Cmd -> a
+(<!|) x y = quickCmd $ pipeIn 2 0 y x
+
+(|>) :: QuickCmd a => Cmd -> Cmd -> a
+(|>) x y = quickCmd $ pipeOut 0 1 y x
+
+(|!>) :: QuickCmd a => Cmd -> Cmd -> a
+(|!>) x y = quickCmd $ pipeOut 0 2 y x
+
+(<<<) :: (QuickCmd a, ToByteString b) => Cmd -> b -> a
+(<<<) cmd str = quickCmd $ pipeHIn 0 (\_ h -> B.hPut h (toByteString str) >> hClose h) cmd
+
+(>>>) :: QuickCmd a => Cmd -> (ByteString -> IO ()) -> a
+(>>>) cmd handler = quickCmd $ pipeHOut 1 (\_ h -> B.hGetContents h >>= handler >> hClose h) cmd

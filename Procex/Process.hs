@@ -1,4 +1,4 @@
-module Procex.Process (makeCmd, run, pipeArgIn', pipeArgIn, pipeArgOut', pipeArgOut, pipeStrIn, pipeIn', pipeOut', pipeIn, pipeOut, capture) where
+module Procex.Process (makeCmd, run, pipeArgIn, pipeArgOut, pipeHIn, pipeHOut, pipeIn, pipeOut, capture) where
 
 import Control.Concurrent.Async
 import Control.Exception.Base
@@ -9,7 +9,7 @@ import Data.Function
 import Data.Tuple
 import Procex.Core
 import System.Exit (ExitCode (..))
-import System.IO (hClose, hSetBinaryMode)
+import System.IO (Handle, hClose, hSetBinaryMode)
 import System.Posix.ByteString
 
 findM :: Monad m => (a -> m Bool) -> [a] -> m (Maybe a)
@@ -48,17 +48,11 @@ pipeArgFd dir fd cmd1 cmd2 = unIOCmd $ do
           _ <- async $ (either throwIO pure status2 >>= wait) `finally` cancel status1
           pure ()
 
-pipeArgIn' :: Fd -> Cmd -> Cmd -> Cmd
-pipeArgIn' = pipeArgFd True
+pipeArgIn :: Fd -> Cmd -> Cmd -> Cmd
+pipeArgIn = pipeArgFd True
 
-pipeArgIn :: Cmd -> Cmd -> Cmd
-pipeArgIn = pipeArgIn' 1
-
-pipeArgOut' :: Fd -> Cmd -> Cmd -> Cmd
-pipeArgOut' = pipeArgFd False
-
-pipeArgOut :: Cmd -> Cmd -> Cmd
-pipeArgOut = pipeArgOut' 0
+pipeArgOut :: Fd -> Cmd -> Cmd -> Cmd
+pipeArgOut = pipeArgFd False
 
 pipeFd :: Bool -> Fd -> Fd -> Cmd -> Cmd -> Cmd
 pipeFd dir fd1 fd2 cmd1 cmd2 = unIOCmd $ do
@@ -71,24 +65,31 @@ pipeFd dir fd1 fd2 cmd1 cmd2 = unIOCmd $ do
           _ <- async $ (either throwIO pure status2 >>= wait) `finally` cancel status1
           pure ()
 
-pipeIn' :: Fd -> Fd -> Cmd -> Cmd -> Cmd
-pipeIn' = pipeFd True
+pipeIn :: Fd -> Fd -> Cmd -> Cmd -> Cmd
+pipeIn = pipeFd True
 
-pipeIn :: Cmd -> Cmd -> Cmd
-pipeIn = pipeIn' 1 0
+pipeOut :: Fd -> Fd -> Cmd -> Cmd -> Cmd
+pipeOut = pipeFd False
 
-pipeOut' :: Fd -> Fd -> Cmd -> Cmd -> Cmd
-pipeOut' = pipeFd False
+pipeH :: Bool -> Fd -> (Async ProcessStatus -> Handle -> IO ()) -> Cmd -> Cmd
+pipeH dir fd handler cmd = unIOCmd $
+  bracketOnError ((if dir then swap else id) <$> createPipe) (\(x, y) -> closeFd x >> closeFd y) $ \(x, y) -> do
+    pure $ flip postCmd (cmd & passFd (fd, y)) $ \status -> do
+      closeFd y
+      case status of
+        Right status -> do
+          x <- fdToHandle x
+          _ <- async $ handler status x
+          pure ()
+        Left e -> do
+          closeFd x
+          throwIO e
 
-pipeOut :: Cmd -> Cmd -> Cmd
-pipeOut = pipeOut' 0 1
+pipeHIn :: Fd -> (Async ProcessStatus -> Handle -> IO ()) -> Cmd -> Cmd
+pipeHIn = pipeH True
 
-pipeStrIn :: ByteString -> Cmd -> Cmd
-pipeStrIn str cmd = unIOCmd $ do
-  bracketOnError createPipe (\(r, w) -> closeFd r >> closeFd w) $ \(r, w) -> do
-    w' <- fdToHandle w
-    _ <- async $ B.hPut w' str >> hClose w'
-    pure . postCmd (const $ closeFd r) $ cmd & passFd (0, r)
+pipeHOut :: Fd -> (Async ProcessStatus -> Handle -> IO ()) -> Cmd -> Cmd
+pipeHOut = pipeH False
 
 capture :: Cmd -> IO ByteString
 capture cmd =
