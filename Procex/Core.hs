@@ -80,7 +80,7 @@ run' cmd = unCmd cmd emptyArgs
 -- `execve` without `fork`
 -- Will not return unless an error occurs
 runReplace :: Cmd -> IO ()
-runReplace cmd = const () <$> unCmd cmd emptyArgs { executor = execve }
+runReplace cmd = const () <$> unCmd cmd emptyArgs {executor = execve}
 
 passArg :: ByteString -> Cmd -> Cmd
 passArg str cmd = Cmd $ \args -> unCmd cmd $ argPrepend str args

@@ -13,9 +13,10 @@ import System.IO (Handle)
 import System.Posix.ByteString
 
 findM :: Monad m => (a -> m Bool) -> [a] -> m (Maybe a)
-findM f (x : xs) = f x >>= \b -> case b of
-  True -> pure $ Just x
-  False -> findM f xs
+findM f (x : xs) =
+  f x >>= \b -> case b of
+    True -> pure $ Just x
+    False -> findM f xs
 findM _ [] = pure Nothing
 
 makeCmd :: ByteString -> Cmd
@@ -74,16 +75,17 @@ pipeOut = pipeFd False
 pipeH :: Bool -> Fd -> (Async ProcessStatus -> Handle -> IO ()) -> Cmd -> Cmd
 pipeH dir fd handler cmd = unIOCmd $
   bracketOnError ((if dir then swap else id) <$> createPipe) (\(x, y) -> closeFd x >> closeFd y) $ \(x, y) -> do
-    pure $ flip postCmd (cmd & passFd (fd, y)) $ \status -> do
-      closeFd y
-      case status of
-        Right status -> do
-          x <- fdToHandle x
-          _ <- async $ handler status x
-          pure ()
-        Left e -> do
-          closeFd x
-          throwIO e
+    pure $
+      flip postCmd (cmd & passFd (fd, y)) $ \status -> do
+        closeFd y
+        case status of
+          Right status -> do
+            x <- fdToHandle x
+            _ <- async $ handler status x
+            pure ()
+          Left e -> do
+            closeFd x
+            throwIO e
 
 pipeHIn :: Fd -> (Async ProcessStatus -> Handle -> IO ()) -> Cmd -> Cmd
 pipeHIn = pipeH True

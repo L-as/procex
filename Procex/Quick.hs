@@ -1,11 +1,11 @@
 module Procex.Quick (mq, ξ, QuickCmd, QuickCmdArg, quickCmd, quickCmdArg, ToByteString, toByteString, (<|), (|>), (<!|), (|!>), (<<<), (>>>), (!>>>)) where
 
-import Procex.Process
-import Procex.Core
+import qualified Data.ByteString as BS
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy as B
 import qualified Data.ByteString.Lazy.UTF8 as B
-import qualified Data.ByteString as BS
+import Procex.Core
+import Procex.Process
 import System.IO (hClose)
 
 class ToByteString a where
@@ -51,11 +51,17 @@ mq path = quickCmd $ makeCmd (toByteString path)
 ξ = mq
 
 infixl 1 <|
+
 infixl 1 <!|
+
 infixl 1 |>
+
 infixl 1 |!>
+
 infixl 1 <<<
+
 infixl 1 >>>
+
 infixl 1 !>>>
 
 (<|) :: QuickCmd a => Cmd -> Cmd -> a

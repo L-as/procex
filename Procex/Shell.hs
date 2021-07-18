@@ -1,8 +1,8 @@
 module Procex.Shell (promptFunction, initInteractive) where
 
-import System.Posix.Env
-import System.Posix.Directory
 import System.IO
+import System.Posix.Directory
+import System.Posix.Env
 
 promptFunction :: [String] -> Int -> IO String
 promptFunction _modules _line = do
