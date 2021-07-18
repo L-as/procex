@@ -15,7 +15,7 @@ category:           System
 extra-source-files: CHANGELOG.md
 
 library
-    exposed-modules:  Procex.Core, Procex.Process, Procex.Execve, Procex.Quick, Procex.Prelude, Procex.Shell
+    exposed-modules:  Procex.Prelude, Procex.Core, Procex.Process, Procex.Execve, Procex.Quick, Procex.Shell
 
     default-extensions:
         AllowAmbiguousTypes,
