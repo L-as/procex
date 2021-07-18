@@ -10,4 +10,4 @@ import Control.Exception
 
 main :: IO ()
 main = do
-  ξ "echo" "teststring" >>> \out -> assert (out == "teststring") $ pure ()
+  mq "echo" "teststring" >>> \out -> assert (out == "teststring") $ pure ()

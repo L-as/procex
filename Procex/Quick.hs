@@ -1,4 +1,4 @@
-module Procex.Quick (mq, ξ, QuickCmd, QuickCmdArg, quickCmd, quickCmdArg, ToByteString, toByteString, (<|), (|>), (<!|), (|!>), (<<<), (>>>), (!>>>)) where
+module Procex.Quick (mq, QuickCmd, QuickCmdArg, quickCmd, quickCmdArg, ToByteString, toByteString, (<|), (|>), (<!|), (|!>), (<<<), (>>>), (!>>>)) where
 
 import qualified Data.ByteString as BS
 import Data.ByteString.Lazy (ByteString)
@@ -57,10 +57,6 @@ mq ::
   -- | Either a 'Cmd', an @IO ()@, or a function that takes @Cmd -> Cmd@ , 'String' or 'ByteString'
   a
 mq path = quickCmd $ makeCmd (toByteString path)
-
--- | A unicode version of 'mq'
-ξ :: (QuickCmd a, ToByteString b) => b -> a
-ξ = mq
 
 -- | Pipe from the right command to the left command.
 -- Returns the left command modified.
