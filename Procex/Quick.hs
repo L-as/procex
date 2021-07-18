@@ -1,4 +1,4 @@
-module Procex.Quick (mq, ξ, QuickCmd, QuickCmdArg, quickCmd, quickCmdArg, ToByteString, toByteString, (<|), (|>), (<!|), (|!>), (<<<), (>>>)) where
+module Procex.Quick (mq, ξ, QuickCmd, QuickCmdArg, quickCmd, quickCmdArg, ToByteString, toByteString, (<|), (|>), (<!|), (|!>), (<<<), (>>>), (!>>>)) where
 
 import Procex.Process
 import Procex.Core
@@ -56,6 +56,7 @@ infixl 1 |>
 infixl 1 |!>
 infixl 1 <<<
 infixl 1 >>>
+infixl 1 !>>>
 
 (<|) :: QuickCmd a => Cmd -> Cmd -> a
 (<|) x y = quickCmd $ pipeIn 1 0 y x
@@ -74,3 +75,6 @@ infixl 1 >>>
 
 (>>>) :: QuickCmd a => Cmd -> (ByteString -> IO ()) -> a
 (>>>) cmd handler = quickCmd $ pipeHOut 1 (\_ h -> B.hGetContents h >>= handler >> hClose h) cmd
+
+(!>>>) :: QuickCmd a => Cmd -> (ByteString -> IO ()) -> a
+(!>>>) cmd handler = quickCmd $ pipeHOut 2 (\_ h -> B.hGetContents h >>= handler >> hClose h) cmd
