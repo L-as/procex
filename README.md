@@ -10,7 +10,18 @@ This is a Haskell library for launching Unix processes.
 - Set fds besides 0, 1, and 2
 - Launch a process without taking >0.5s when max fds is high
 - Launch processes with an invalid UTF-8 name
-- Simple and extensible API
+- Be extended easily due to the simple API
+- Be used as a shell
+
+# Example
+
+```hs
+import Procex.Prelude
+
+main :: IO ()
+main = mq "someexe" <<< "some stdin" >>> \stdout -> putStrLn (show stdout)
+```
+
 
 # TODO
 
