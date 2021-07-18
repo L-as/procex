@@ -60,4 +60,5 @@ library
 Test-Suite example
   type: exitcode-stdio-1.0
   main-is: example.hs
+  default-language: Haskell2010
   build-depends: base, procex

@@ -19,6 +19,8 @@ findM f (x : xs) =
     False -> findM f xs
 findM _ [] = pure Nothing
 
+-- | A version of 'Procex.Core.makeCmd'' that resolves the path
+-- according to PATH and passes through stdin, stdout and stderr (unless overrided).
 makeCmd :: ByteString -> Cmd
 makeCmd path = unIOCmd $ do
   fullpath :: ByteString <-
@@ -32,11 +34,13 @@ makeCmd path = unIOCmd $ do
           Nothing -> throwIO $ userError (show path <> " does not exist")
   pure $ makeCmd' fullpath & passArg path & passFd (0, 0) & passFd (1, 1) & passFd (2, 2)
 
+-- | Runs a command synchronously. See also 'Procex.Core.run''.
+-- An exception will be thrown if the command fails.
 run :: Cmd -> IO ()
 run cmd =
   run' cmd >>= wait >>= \case
     Exited ExitSuccess -> pure ()
-    e -> throwIO . userError $ "Cmd failed " <> show e
+    e -> throwIO . userError $ "Cmd failed " <> show e -- FIXME
 
 pipeArgFd :: Bool -> Fd -> Cmd -> Cmd -> Cmd
 pipeArgFd dir fd cmd1 cmd2 = unIOCmd $ do
@@ -49,10 +53,30 @@ pipeArgFd dir fd cmd1 cmd2 = unIOCmd $ do
           _ <- async $ (either throwIO pure status2 >>= wait) `finally` cancel status1
           pure ()
 
-pipeArgIn :: Fd -> Cmd -> Cmd -> Cmd
+-- | Pass an argument of the form @\/proc\/self\/fd\/\<n\>@ to the process,
+-- where `n` is the reader end of a pipe which the command
+-- writes to through the specified fd.
+pipeArgIn ::
+  -- | The fd the command will write to
+  Fd ->
+  -- | The command that will write to the fd
+  Cmd ->
+  -- | The command you're modifying
+  Cmd ->
+  Cmd
 pipeArgIn = pipeArgFd True
 
-pipeArgOut :: Fd -> Cmd -> Cmd -> Cmd
+-- | Pass an argument of the form @\/proc\/self\/fd\/\<n\>@ to the process,
+-- where `n` is the writer end of a pipe which the command
+-- reads from through the specified fd.
+pipeArgOut ::
+  -- | The fd the command will read from
+  Fd ->
+  -- | The command that will read from the fd
+  Cmd ->
+  -- | The command you're modifying
+  Cmd ->
+  Cmd
 pipeArgOut = pipeArgFd False
 
 pipeFd :: Bool -> Fd -> Fd -> Cmd -> Cmd -> Cmd
@@ -66,10 +90,30 @@ pipeFd dir fd1 fd2 cmd1 cmd2 = unIOCmd $ do
           _ <- async $ (either throwIO pure status2 >>= wait) `finally` cancel status1
           pure ()
 
-pipeIn :: Fd -> Fd -> Cmd -> Cmd -> Cmd
+-- | Pipes from the first command to the second command
+pipeIn ::
+  -- | The writing end
+  Fd ->
+  -- | The reading end
+  Fd ->
+  -- | The writer command
+  Cmd ->
+  -- | The reader command
+  Cmd ->
+  Cmd
 pipeIn = pipeFd True
 
-pipeOut :: Fd -> Fd -> Cmd -> Cmd -> Cmd
+-- | Pipes from the second command to the first command
+pipeOut ::
+  -- | The reading end
+  Fd ->
+  -- | The writing end
+  Fd ->
+  -- | The reader command
+  Cmd ->
+  -- | The writer command
+  Cmd ->
+  Cmd
 pipeOut = pipeFd False
 
 pipeH :: Bool -> Fd -> (Async ProcessStatus -> Handle -> IO ()) -> Cmd -> Cmd
@@ -87,12 +131,15 @@ pipeH dir fd handler cmd = unIOCmd $
             closeFd x
             throwIO e
 
+-- | Pipes from the handle to the fd.
 pipeHIn :: Fd -> (Async ProcessStatus -> Handle -> IO ()) -> Cmd -> Cmd
 pipeHIn = pipeH True
 
+-- | Pipes from the fd to the handle.
 pipeHOut :: Fd -> (Async ProcessStatus -> Handle -> IO ()) -> Cmd -> Cmd
 pipeHOut = pipeH False
 
+-- | Captures the output to the specified fd
 captureFd :: Fd -> Cmd -> IO ByteString
 captureFd fd cmd =
   bracketOnError createPipe (\(r, w) -> closeFd r >> closeFd w) $ \(r, w) -> do

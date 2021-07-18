@@ -25,11 +25,18 @@ type ExecveRaw =
   CSize ->
   IO CPid
 
+-- The signature for 'execve' and 'forkexecve'.
 type Execve =
+  -- | The full path to the executable.
   ByteString ->
+  -- | The args to pass, including argv[0].
   [ByteString] ->
+  -- | The environment to pass. Will default to the current environment if 'Nothing' is passed.
   Maybe [ByteString] ->
+  -- | The fds to pass. All other fds will be closed. In the new process, the integral id for each fd will be
+  -- set to the position the fd has in this list, e.g. the first element in this list will be stdin, and so on.
   [Fd] ->
+  -- | The process id for the new process.
   IO (Maybe CPid)
 
 foreign import ccall "vfork_close_execve" c_vfork_close_execve :: ExecveRaw
@@ -55,9 +62,11 @@ exec' f path args env fds = do
                   f path args env fds (CSize . fromIntegral $ fd_count)
             Nothing -> f path args nullPtr fds (CSize . fromIntegral $ fd_count)
 
+-- | Replace the current process with a new process.
 execve :: Execve
 execve path args env fds = const Nothing <$> exec' c_close_execve path args env fds
 
+-- | Fork and execute a new process.
 forkexecve :: Execve
 forkexecve path args env fds = h <$> exec' c_vfork_close_execve path args env fds
   where

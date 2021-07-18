@@ -8,6 +8,7 @@ import Procex.Core
 import Procex.Process
 import System.IO (hClose)
 
+-- | A helper class to convert to bytestrings with UTF-8 encoding
 class ToByteString a where
   toByteString :: a -> B.ByteString
 
@@ -20,6 +21,7 @@ instance ToByteString B.ByteString where
 instance ToByteString BS.ByteString where
   toByteString = B.fromStrict
 
+-- | A helper class to allow lightweight syntax for executing commands
 class QuickCmdArg a where
   quickCmdArg :: a -> Cmd -> Cmd
 
@@ -44,43 +46,64 @@ instance (a ~ ()) => QuickCmd (IO a) where
 instance QuickCmd Cmd where
   quickCmd = id
 
-mq :: (QuickCmd a, ToByteString b) => b -> a
+-- | >>> mq "cat" "/dev/null" (pipeArgIn 1 $ mq "cat" "/dev/null") <<< "somestr"
+--
+-- The first argument is the path, and the subsequent arguments are 'QuickCmdArg'.
+-- At the end you will either have an @IO ()@ (synchronous execution) or 'Cmd' (which you can further use).
+mq ::
+  (QuickCmd a, ToByteString b) =>
+  -- | The path to the executable, uses PATH
+  b ->
+  -- | Either a 'Cmd', an @IO ()@, or a function that takes @Cmd -> Cmd@ , 'String' or 'ByteString'
+  a
 mq path = quickCmd $ makeCmd (toByteString path)
 
+-- | A unicode version of 'mq'
 ξ :: (QuickCmd a, ToByteString b) => b -> a
 ξ = mq
 
+-- | Pipe from the right command to the left command.
+-- Returns the left command modified.
 infixl 1 <|
-
-infixl 1 <!|
-
-infixl 1 |>
-
-infixl 1 |!>
-
-infixl 1 <<<
-
-infixl 1 >>>
-
-infixl 1 !>>>
 
 (<|) :: QuickCmd a => Cmd -> Cmd -> a
 (<|) x y = quickCmd $ pipeIn 1 0 y x
 
+-- | Pipe from the right command's stderr to the left command.
+-- Returns the left command modified.
+infixl 1 <!|
+
 (<!|) :: QuickCmd a => Cmd -> Cmd -> a
 (<!|) x y = quickCmd $ pipeIn 2 0 y x
+
+-- | Pipe from the left command to the right command.
+-- Returns the left command modified.
+infixl 1 |>
 
 (|>) :: QuickCmd a => Cmd -> Cmd -> a
 (|>) x y = quickCmd $ pipeOut 0 1 y x
 
+-- | Pipe from the left command's stderr to the right command.
+-- Returns the left command modified.
+infixl 1 |!>
+
 (|!>) :: QuickCmd a => Cmd -> Cmd -> a
 (|!>) x y = quickCmd $ pipeOut 0 2 y x
+
+-- | Pass a string as stdin.
+infixl 1 <<<
 
 (<<<) :: (QuickCmd a, ToByteString b) => Cmd -> b -> a
 (<<<) cmd str = quickCmd $ pipeHIn 0 (\_ h -> B.hPut h (toByteString str) >> hClose h) cmd
 
+-- | Handle the output from stdout.
+infixl 1 >>>
+
 (>>>) :: QuickCmd a => Cmd -> (ByteString -> IO ()) -> a
 (>>>) cmd handler = quickCmd $ pipeHOut 1 (\_ h -> B.hGetContents h >>= handler >> hClose h) cmd
+
+-- | Handle the output from stderr.
+infixl 1 !>>>
 
 (!>>>) :: QuickCmd a => Cmd -> (ByteString -> IO ()) -> a
 (!>>>) cmd handler = quickCmd $ pipeHOut 2 (\_ h -> B.hGetContents h >>= handler >> hClose h) cmd
