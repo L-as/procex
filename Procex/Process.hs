@@ -1,4 +1,4 @@
-module Procex.Process (makeCmd, run, pipeArgIn, pipeArgOut, pipeHIn, pipeHOut, pipeIn, pipeOut, capture) where
+module Procex.Process (makeCmd, run, pipeArgIn, pipeArgOut, pipeHIn, pipeHOut, pipeIn, pipeOut, captureFd) where
 
 import Control.Concurrent.Async
 import Control.Exception.Base
@@ -9,7 +9,7 @@ import Data.Function
 import Data.Tuple
 import Procex.Core
 import System.Exit (ExitCode (..))
-import System.IO (Handle, hClose, hSetBinaryMode)
+import System.IO (Handle)
 import System.Posix.ByteString
 
 findM :: Monad m => (a -> m Bool) -> [a] -> m (Maybe a)
@@ -91,11 +91,10 @@ pipeHIn = pipeH True
 pipeHOut :: Fd -> (Async ProcessStatus -> Handle -> IO ()) -> Cmd -> Cmd
 pipeHOut = pipeH False
 
-capture :: Cmd -> IO ByteString
-capture cmd =
+captureFd :: Fd -> Cmd -> IO ByteString
+captureFd fd cmd =
   bracketOnError createPipe (\(r, w) -> closeFd r >> closeFd w) $ \(r, w) -> do
-    _ <- run' $ cmd & passFd (1, w) -- TODO terminate eventually?
+    _ <- run' $ cmd & passFd (fd, w) -- TODO terminate eventually?
     closeFd w
     r' <- fdToHandle r
-    hSetBinaryMode r' True
     B.hGetContents r'
