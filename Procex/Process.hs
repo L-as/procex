@@ -34,13 +34,18 @@ makeCmd path = unIOCmd $ do
           Nothing -> throwIO $ userError (show path <> " does not exist")
   pure $ makeCmd' fullpath & passArg path & passFd (0, 0) & passFd (1, 1) & passFd (2, 2)
 
+-- | Thrown when the return code of a command isn't 0.
+newtype CmdException = CmdException ProcessStatus deriving Show
+instance Exception CmdException where
+  displayException (CmdException status) = "Command failed: " <> show status
+
 -- | Runs a command synchronously. See also 'Procex.Core.run''.
--- An exception will be thrown if the command fails.
+-- 'CmdException' will be thrown if the command fails.
 run :: Cmd -> IO ()
 run cmd =
   run' cmd >>= wait >>= \case
     Exited ExitSuccess -> pure ()
-    e -> throwIO . userError $ "Cmd failed " <> show e -- FIXME
+    e -> throwIO (CmdException e)
 
 pipeArgFd :: Bool -> Fd -> Cmd -> Cmd -> Cmd
 pipeArgFd dir fd cmd1 cmd2 = unIOCmd $ do
