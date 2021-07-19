@@ -15,50 +15,31 @@ category:           System
 extra-source-files: CHANGELOG.md
 
 library
-    exposed-modules:  Procex.Prelude, Procex.Core, Procex.Process, Procex.Execve, Procex.Quick, Procex.Shell
+  exposed-modules: Procex.Prelude, Procex.Core, Procex.Process, Procex.Execve, Procex.Quick, Procex.Shell
 
-    default-extensions:
-        AllowAmbiguousTypes,
-        BangPatterns,
-        DataKinds,
-        DefaultSignatures,
-        DeriveFunctor,
-        ExtendedDefaultRules,
-        FlexibleContexts,
-        FlexibleInstances,
-        ForeignFunctionInterface,
-        FunctionalDependencies,
-        GADTs,
-        GeneralizedNewtypeDeriving,
-        KindSignatures,
-        LambdaCase,
-        MultiParamTypeClasses,
-        NamedFieldPuns,
-        NondecreasingIndentation,
-        OverloadedLabels,
-        OverloadedLists,
-        OverloadedStrings,
-        PartialTypeSignatures,
-        QuasiQuotes,
-        RankNTypes,
-        RecordWildCards,
-        ScopedTypeVariables,
-        TemplateHaskell,
-        TypeApplications
-    build-depends:
-        base,
-        bytestring,
-        unix,
-        utf8-string,
-        async,
-        containers
-    hs-source-dirs:   .
-    default-language: Haskell2010
-    ghc-options: -Wall -Wno-name-shadowing
-    c-sources: cbits/glue.c
+  default-extensions:
+    OverloadedStrings,
+    OverloadedLists,
+    NamedFieldPuns,
+    RecordWildCards,
+    LambdaCase,
+    ScopedTypeVariables,
+    FlexibleInstances,
+    GADTs
+  build-depends:
+    base ^>= 4.14.1,
+    bytestring ^>= 0.10.12,
+    unix ^>= 2.7.2,
+    utf8-string ^>= 1.0.2,
+    async ^>= 2.2.3,
+    containers ^>= 0.6.2
+  default-language: Haskell2010
+  ghc-options: -Wall -Wno-name-shadowing
+  c-sources: cbits/glue.c
 
 Test-Suite example
   type: exitcode-stdio-1.0
   main-is: example.hs
   default-language: Haskell2010
   build-depends: base, procex
+  ghc-options: -Wall -Wno-name-shadowing
