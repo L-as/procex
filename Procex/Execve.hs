@@ -1,6 +1,5 @@
 module Procex.Execve (Execve, execve, forkexecve) where
 
-import Control.Exception
 import qualified Data.ByteString as BS
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy as B
@@ -8,14 +7,6 @@ import Foreign
 import Foreign.C.Types
 import System.Posix.ByteString
 import Prelude
-
-data AdhocError where
-  AdhocError :: Show a => a -> AdhocError
-
-instance Show AdhocError where
-  showsPrec i (AdhocError x) = showsPrec i x
-
-instance Exception AdhocError
 
 type ExecveRaw =
   Ptr CChar ->
