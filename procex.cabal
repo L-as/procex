@@ -2,7 +2,11 @@ cabal-version:      2.4
 name:               procex
 version:            0.1.0.0
 
-synopsis: Ergonomic process launching with pipes, etc.
+synopsis: Ergonomic process launching with extreme flexibility and speed
+description:
+  procex is a library for launching unix processes, that DOES NOT wrap createProcess.
+  It interfaces directly with vfork and execve, and closes fds efficiently using the new close_range Linux syscall.
+  The syntax for launching processes is clean, concise, and flexible, mimicking sh.
 
 bug-reports: https://github.com/L-as/procex
 
@@ -11,8 +15,12 @@ license:            Apache-2.0
 author:             Las Safin
 maintainer:         las@protonmail.ch
 
-category:           System
+category:           System, Shell
 extra-source-files: CHANGELOG.md
+
+source-repository head
+  type:     git
+  location: https://github.com/L-as/procex
 
 library
   exposed-modules: Procex.Prelude, Procex.Core, Procex.Process, Procex.Execve, Procex.Quick, Procex.Shell
@@ -27,8 +35,8 @@ library
     FlexibleInstances,
     GADTs
   build-depends:
-    base ^>= 4.14.1,
-    bytestring ^>= 0.10.12,
+    base >= 4.14.1 && < 4.16,
+    bytestring >= 0.10.12 && < 0.12,
     unix ^>= 2.7.2,
     utf8-string ^>= 1.0.2,
     async ^>= 2.2.3,

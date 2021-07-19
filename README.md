@@ -1,8 +1,10 @@
 # About
 
-This is a Haskell library for launching Unix processes.
+`procex` is a library for launching unix processes, that DOES NOT wrap `createProcess`.
+It interfaces directly with `vfork` and `execve`, and closes fds efficiently using the new `close_range` Linux syscall.
+The syntax for launching processes is clean, concise, and flexible, mimicking `sh`.
 
-# Differences from shh, turtle, etc. etc.
+# Differences from shh, turtle, etc.
 
 `procex` can:
 
@@ -27,3 +29,5 @@ main = mq "someexe" <<< "some stdin" >>> \stdout -> putStrLn (show stdout)
 
 - Setting the environment (workaround: use `env` from coreutils)
 - Better README
+- Support for Linuxes older than 5.9
+- Support for non-Linux kernels
