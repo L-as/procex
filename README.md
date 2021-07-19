@@ -1,3 +1,5 @@
+[![Hackage](https://img.shields.io/hackage/v/procex.svg?style=flat)](https://hackage.haskell.org/package/procex)
+
 # About
 
 `procex` is a library for launching unix processes, that DOES NOT wrap `createProcess`.
