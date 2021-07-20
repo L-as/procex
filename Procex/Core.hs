@@ -33,7 +33,7 @@ argFdPrepend arg Args {..} = Args {args = ArgFd arg : args, ..}
 -- | A command. You can execute this with 'run'' or 'Procex.Process.run'.
 newtype Cmd = Cmd {unCmd :: Args -> IO (Async ProcessStatus)}
 
--- | Make a 'Cmd' from the full path to an executable.
+-- | Make a 'Cmd' from the path to an executable. Does not take PATH into account.
 -- See 'Procex.Process.makeCmd' for a version that provides
 -- some sensible defaults, like forwarding stdin, stdout, stderr.
 makeCmd' :: ByteString -> Cmd
