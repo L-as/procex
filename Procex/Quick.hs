@@ -1,4 +1,4 @@
-module Procex.Quick (mq, QuickCmd, QuickCmdArg, quickCmd, quickCmdArg, ToByteString, toByteString, (<|), (|>), (<!|), (|!>), (<<<), (>>>), (!>>>), pipeArgStrIn, pipeArgStrOut, capture, captureErr) where
+module Procex.Quick (mq, QuickCmd, QuickCmdArg, quickCmd, quickCmdArg, ToByteString, toByteString, (<|), (|>), (<!|), (|!>), (<<<), pipeArgStrIn, capture, captureErr) where
 
 import qualified Data.ByteString as BS
 import Data.ByteString.Lazy (ByteString)
