@@ -15,8 +15,9 @@ The syntax for launching processes is clean, concise, and flexible, mimicking `s
 - Set fds besides 0, 1, and 2
 - Launch a process without taking >0.5s when max fds is high
 - Launch processes with an invalid UTF-8 name
-- Be extended easily due to the simple API
+- Be extended easily due to the flexible and simple API
 - Be used as a shell
+- not wrap Haskell functions in a `Cmd` like `shh`, because that is generally not a good solution
 
 # Example
 
