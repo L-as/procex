@@ -158,7 +158,7 @@ pipeArgHIn = pipeArgH True
 pipeArgHOut :: (Async ProcessStatus -> Handle -> IO ()) -> Cmd -> Cmd
 pipeArgHOut = pipeArgH False
 
--- | Captures the output to the specified fd.
+-- | Captures the output to the specified fd lazily.
 captureFd :: Fd -> Cmd -> IO ByteString
 captureFd fd cmd =
   bracketOnError createPipe (\(r, w) -> closeFd r >> closeFd w) $ \(r, w) -> do

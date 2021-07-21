@@ -92,26 +92,38 @@ infixl 1 <<<
 (<<<) :: (QuickCmd a, ToByteString b) => Cmd -> b -> a
 (<<<) cmd str = quickCmd $ pipeHIn 0 (\_ h -> B.hPut h (toByteString str) >> hClose h) cmd
 
--- | Handle the output from stdout.
-infixl 1 >>>
+-- This function is pretty much never useful. If you want to handle the output
+-- of the command, use `capture` or similar.
+-- The problem is that it creates a new thread in the background, when
+-- what we really want is to handle the output in the foreground, because
+-- when our foreground is done executing, it will not wait for the background threads
+-- to stop executing too.
+---- | Handle the output from stdout.
+--infixl 1 >>>
+--
+--(>>>) :: QuickCmd a => Cmd -> (ByteString -> IO ()) -> a
+--(>>>) cmd handler = quickCmd $ pipeHOut 1 (\_ h -> B.hGetContents h >>= handler >> hClose h) cmd
 
-(>>>) :: QuickCmd a => Cmd -> (ByteString -> IO ()) -> a
-(>>>) cmd handler = quickCmd $ pipeHOut 1 (\_ h -> B.hGetContents h >>= handler >> hClose h) cmd
+-- Disabled with same reason as for `>>>`.
+---- | Handle the output from stderr.
+----infixl 1 !>>>
+----
+----(!>>>) :: QuickCmd a => Cmd -> (ByteString -> IO ()) -> a
+----(!>>>) cmd handler = quickCmd $ pipeHOut 2 (\_ h -> B.hGetContents h >>= handler >> hClose h) cmd
 
--- | Handle the output from stderr.
-infixl 1 !>>>
-
-(!>>>) :: QuickCmd a => Cmd -> (ByteString -> IO ()) -> a
-(!>>>) cmd handler = quickCmd $ pipeHOut 2 (\_ h -> B.hGetContents h >>= handler >> hClose h) cmd
-
+-- | Pass an argument of the form @\/proc\/self\/fd\/\<n\>@ to the process,
+-- where `n` is the reader end of a pipe which the passed string is written to.
 pipeArgStrIn :: ToByteString b => b -> Cmd -> Cmd
 pipeArgStrIn str = pipeArgHIn (\_ h -> B.hPut h (toByteString str) >> hClose h)
 
-pipeArgStrOut :: (ByteString -> IO ()) -> Cmd -> Cmd
-pipeArgStrOut handler = pipeArgHOut (\_ h -> B.hGetContents h >>= handler >> hClose h)
+-- Disabled with same reason as for `>>>`.
+--pipeArgStrOut :: (ByteString -> IO ()) -> Cmd -> Cmd
+--pipeArgStrOut handler = pipeArgHOut (\_ h -> B.hGetContents h >>= handler >> hClose h)
 
+-- | Capture the stdout of the command lazily
 capture :: Cmd -> IO ByteString
 capture = captureFd 1
 
+-- | Capture the stderr of the command lazily
 captureErr :: Cmd -> IO ByteString
 captureErr = captureFd 2

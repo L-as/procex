@@ -50,5 +50,12 @@ Test-Suite example
   type: exitcode-stdio-1.0
   main-is: example.hs
   default-language: Haskell2010
-  build-depends: base, procex
-  ghc-options: -Wall -Wno-name-shadowing
+  build-depends: base, procex, async
+  ghc-options: -threaded -Wall -Wno-name-shadowing
+
+executable procex-example
+  build-depends: base, procex, async
+  default-language: Haskell2010
+  ghc-options: -threaded -Wall -Wno-name-shadowing
+  hs-source-dirs: .
+  main-is: example.hs
