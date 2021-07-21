@@ -125,7 +125,8 @@ pipeH' dir handler cmd = unIOCmd $
         case status of
           Right status -> do
             x <- fdToHandle x
-            _ <- async $ handler status x
+            a <- async $ handler status x
+            link a
             pure ()
           Left e -> do
             closeFd x

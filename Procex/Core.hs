@@ -57,6 +57,7 @@ makeCmd' path = Cmd $ \Args {args, fds, executor} -> do
     Just x -> pure x
     Nothing -> throwErrno $ "Couldn't execute " <> show path <> " with args " <> show args' <> " with the following fds: " <> show all_fds
   async $ do
+    -- `onException` is for asynchronous exceptions too.
     status <- getProcessStatus True True pid `onException` signalProcess sigTERM pid
     case status of
       Just status -> pure status
