@@ -17,7 +17,7 @@ static int close_range(unsigned int first) {
 static int close_range(unsigned int first) {
 	// There could be fds above FD_SETSIZE, but this might not be a problem
 	// because we reset the soft fd limit to FD_SETSIZE (1024) later.
-	for (unsigned int i = first; i <= FD_SETSIZE; i++) close(i);
+	for (unsigned int i = first; i < FD_SETSIZE; i++) close(i);
 	return 0;
 }
 #endif
