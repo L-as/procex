@@ -1,19 +1,29 @@
 #define _GNU_SOURCE
 
 #include <sys/syscall.h>
-#include <linux/close_range.h>
+#include <linux/version.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <unistd.h>
 #include <sched.h>
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,9,0)
+#include <linux/close_range.h>
+// glibc does not wrap close_range so we need to do it ourselves.
+static int close_range(unsigned int first) {
+	return syscall(__NR_close_range, first, ~0U, 0);
+}
+#else
+static int close_range(unsigned int first) {
+	// There could be fds above FD_SETSIZE, but this might not be a problem
+	// because we reset the soft fd limit to FD_SETSIZE (1024) later.
+	for (unsigned int i = first; i <= FD_SETSIZE; i++) close(i);
+	return 0;
+}
+#endif
+
 // This contains the current environment.
 extern char **environ;
-
-// glibc does not wrap close_range so we need to do it ourselves.
-static int close_range(unsigned int first, unsigned int last, unsigned int flags) {
-	return syscall(__NR_close_range, first, last, flags);
-}
 
 // This is like vfork_close_execve but replaces the current process.
 int close_execve(
@@ -45,7 +55,7 @@ int close_execve(
 	}
 
 	// We close all file descriptors that are larger than or equal to fd_count.
-	if (close_range(fd_count, ~0U, 0) == -1) return -1;
+	if (close_range(fd_count) == -1) return -1;
 
 	// Reset fd limit for compatibility with select(), see http://0pointer.net/blog/file-descriptor-limits.html.
 	struct rlimit rl;

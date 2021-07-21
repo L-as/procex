@@ -5,7 +5,8 @@ version:            0.1.0.0
 synopsis: Ergonomic process launching with extreme flexibility and speed
 description:
   procex is a library for launching unix processes, that DOES NOT wrap createProcess.
-  It interfaces directly with vfork and execve, and closes fds efficiently using the new close_range Linux syscall.
+  It interfaces directly with vfork and execve, and closes fds efficiently using
+  the new close_range Linux syscall (or close if not available).
   The syntax for launching processes is clean, concise, and flexible, mimicking sh.
 
 bug-reports: https://github.com/L-as/procex
