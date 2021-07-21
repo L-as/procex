@@ -1,4 +1,4 @@
-module Procex.Quick (mq, QuickCmd, QuickCmdArg, quickCmd, quickCmdArg, ToByteString, toByteString, (<|), (|>), (<!|), (|!>), (<<<), (>>>), (!>>>)) where
+module Procex.Quick (mq, QuickCmd, QuickCmdArg, quickCmd, quickCmdArg, ToByteString, toByteString, (<|), (|>), (<!|), (|!>), (<<<), (>>>), (!>>>), pipeArgStrIn, pipeArgStrOut) where
 
 import qualified Data.ByteString as BS
 import Data.ByteString.Lazy (ByteString)
@@ -103,3 +103,9 @@ infixl 1 !>>>
 
 (!>>>) :: QuickCmd a => Cmd -> (ByteString -> IO ()) -> a
 (!>>>) cmd handler = quickCmd $ pipeHOut 2 (\_ h -> B.hGetContents h >>= handler >> hClose h) cmd
+
+pipeArgStrIn :: ToByteString b => b -> Cmd -> Cmd
+pipeArgStrIn str = pipeArgHIn (\_ h -> B.hPut h (toByteString str) >> hClose h)
+
+pipeArgStrOut :: (ByteString -> IO ()) -> Cmd -> Cmd
+pipeArgStrOut handler = pipeArgHOut (\_ h -> B.hGetContents h >>= handler >> hClose h)

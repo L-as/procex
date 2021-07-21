@@ -1,4 +1,4 @@
-module Procex.Process (makeCmd, run, pipeArgIn, pipeArgOut, pipeHIn, pipeHOut, pipeIn, pipeOut, captureFd) where
+module Procex.Process (makeCmd, CmdException, run, pipeArgIn, pipeArgOut, pipeHIn, pipeHOut, pipeIn, pipeOut, pipeArgHIn, pipeArgHOut, captureFd) where
 
 import Control.Concurrent.Async
 import Control.Exception.Base
@@ -47,16 +47,22 @@ run cmd =
     Exited ExitSuccess -> pure ()
     e -> throwIO (CmdException e)
 
-pipeArgFd :: Bool -> Fd -> Cmd -> Cmd -> Cmd
-pipeArgFd dir fd cmd1 cmd2 = unIOCmd $ do
+pipeFd' :: Bool -> Fd -> Cmd -> (Fd -> Cmd) -> Cmd
+pipeFd' dir fd1 cmd1 cmd2 = unIOCmd $ do
   bracketOnError ((if dir then swap else id) <$> createPipe) (\(x, y) -> closeFd x >> closeFd y) $ \(x, y) -> do
-    bracketOnError (run' $ cmd1 & passFd (fd, x)) (async . cancel) $ \status1 -> do
+    bracketOnError (run' $ cmd1 & passFd (fd1, x)) (async . cancel) $ \status1 -> do
       pure $
-        flip postCmd (cmd2 & passArgFd y) $ \status2 -> do
+        flip postCmd (cmd2 y) $ \status2 -> do
           closeFd x
           closeFd y
           _ <- async $ (either throwIO pure status2 >>= wait) `finally` cancel status1
           pure ()
+
+pipeArgFd :: Bool -> Fd -> Cmd -> Cmd -> Cmd
+pipeArgFd dir fd cmd1 cmd2 = pipeFd' dir fd cmd1 (\y -> passArgFd y cmd2)
+
+pipeFd :: Bool -> Fd -> Fd -> Cmd -> Cmd -> Cmd
+pipeFd dir fd1 fd2 cmd1 cmd2 = pipeFd' dir fd1 cmd1 (\y -> passFd (fd2, y) cmd2)
 
 -- | Pass an argument of the form @\/proc\/self\/fd\/\<n\>@ to the process,
 -- where `n` is the reader end of a pipe which the command
@@ -84,17 +90,6 @@ pipeArgOut ::
   Cmd
 pipeArgOut = pipeArgFd False
 
-pipeFd :: Bool -> Fd -> Fd -> Cmd -> Cmd -> Cmd
-pipeFd dir fd1 fd2 cmd1 cmd2 = unIOCmd $ do
-  bracketOnError ((if dir then swap else id) <$> createPipe) (\(x, y) -> closeFd x >> closeFd y) $ \(x, y) -> do
-    bracketOnError (run' $ cmd1 & passFd (fd1, x)) (async . cancel) $ \status1 -> do
-      pure $
-        flip postCmd (cmd2 & passFd (fd2, y)) $ \status2 -> do
-          closeFd x
-          closeFd y
-          _ <- async $ (either throwIO pure status2 >>= wait) `finally` cancel status1
-          pure ()
-
 -- | Pipes from the first command to the second command
 pipeIn ::
   -- | The writing end
@@ -121,11 +116,11 @@ pipeOut ::
   Cmd
 pipeOut = pipeFd False
 
-pipeH :: Bool -> Fd -> (Async ProcessStatus -> Handle -> IO ()) -> Cmd -> Cmd
-pipeH dir fd handler cmd = unIOCmd $
+pipeH' :: Bool -> (Async ProcessStatus -> Handle -> IO ()) -> (Fd -> Cmd) -> Cmd
+pipeH' dir handler cmd = unIOCmd $
   bracketOnError ((if dir then swap else id) <$> createPipe) (\(x, y) -> closeFd x >> closeFd y) $ \(x, y) -> do
     pure $
-      flip postCmd (cmd & passFd (fd, y)) $ \status -> do
+      flip postCmd (cmd y) $ \status -> do
         closeFd y
         case status of
           Right status -> do
@@ -136,6 +131,9 @@ pipeH dir fd handler cmd = unIOCmd $
             closeFd x
             throwIO e
 
+pipeH :: Bool -> Fd -> (Async ProcessStatus -> Handle -> IO ()) -> Cmd -> Cmd
+pipeH dir fdNew handler cmd = pipeH' dir handler (\fdOld -> passFd (fdNew, fdOld) cmd)
+
 -- | Pipes from the handle to the fd.
 pipeHIn :: Fd -> (Async ProcessStatus -> Handle -> IO ()) -> Cmd -> Cmd
 pipeHIn = pipeH True
@@ -144,7 +142,22 @@ pipeHIn = pipeH True
 pipeHOut :: Fd -> (Async ProcessStatus -> Handle -> IO ()) -> Cmd -> Cmd
 pipeHOut = pipeH False
 
--- | Captures the output to the specified fd
+pipeArgH :: Bool -> (Async ProcessStatus -> Handle -> IO ()) -> Cmd -> Cmd
+pipeArgH dir handler cmd = pipeH' dir handler (\fd -> passArgFd fd cmd)
+
+-- | Pass an argument of the form @\/proc\/self\/fd\/\<n\>@ to the process,
+-- where `n` is the reader end of a pipe where the writer end is passed
+-- to a Haskell function.
+pipeArgHIn :: (Async ProcessStatus -> Handle -> IO ()) -> Cmd -> Cmd
+pipeArgHIn = pipeArgH True
+
+-- | Pass an argument of the form @\/proc\/self\/fd\/\<n\>@ to the process,
+-- where `n` is the writer end of a pipe where the reader end is passed
+-- to a Haskell function.
+pipeArgHOut :: (Async ProcessStatus -> Handle -> IO ()) -> Cmd -> Cmd
+pipeArgHOut = pipeArgH False
+
+-- | Captures the output to the specified fd.
 captureFd :: Fd -> Cmd -> IO ByteString
 captureFd fd cmd =
   bracketOnError createPipe (\(r, w) -> closeFd r >> closeFd w) $ \(r, w) -> do
