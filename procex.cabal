@@ -50,12 +50,23 @@ Test-Suite example
   type: exitcode-stdio-1.0
   main-is: example.hs
   default-language: Haskell2010
-  build-depends: base, procex, async
+  build-depends: base, procex, async, unix
   ghc-options: -threaded -Wall -Wno-name-shadowing
 
-executable procex-example
-  build-depends: base, procex, async
+Test-Suite shell
+  build-depends: base, procex, async, utf8-string, replace-megaparsec, bytestring, directory
+  default-extensions:
+    ExtendedDefaultRules,
+    OverloadedStrings
   default-language: Haskell2010
-  ghc-options: -threaded -Wall -Wno-name-shadowing
-  hs-source-dirs: .
-  main-is: example.hs
+  ghc-options: -threaded -Wall -Wno-name-shadowing -Wno-type-defaults
+  hs-source-dirs: ./example-shell
+  main-is: ShellRC.hs
+  type: exitcode-stdio-1.0
+
+--executable procex-example
+--  build-depends: base, procex, async
+--  default-language: Haskell2010
+--  ghc-options: -threaded -Wall -Wno-name-shadowing
+--  hs-source-dirs: .
+--  main-is: example.hs
