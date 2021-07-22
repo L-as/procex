@@ -13,12 +13,12 @@ import Control.Exception
 import System.Exit
 import Control.Concurrent.Async (wait)
 import System.Posix.Process
+import Control.Monad
 
 main :: IO ()
 main = do
   mq "diff" (pipeArgStrIn "ab\ncd") (pipeArgStrIn "ab\ncd")
-  status <- run' $ mq "diff" (pipeArgStrIn "ab\ncd") (pipeArgStrIn "ab\nce")
-  _ <- wait status
+  _ <- wait <=< run' $ mq "diff" (pipeArgStrIn "ab\ncd") (pipeArgStrIn "ab\nce")
   try (mq "false") >>= \case
     Left (CmdException (Exited (ExitFailure 1))) -> pure ()
     x -> fail $ "unreachable: " <> show x

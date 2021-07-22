@@ -1,5 +1,5 @@
 { mkDerivation, async, base, bytestring, containers, lib, unix
-, utf8-string, replace-megaparsec, directory
+, utf8-string, replace-megaparsec, directory, deepseq
 }:
 mkDerivation {
   pname = "procex";
@@ -7,7 +7,7 @@ mkDerivation {
   src = ./.;
   isLibrary = true;
   libraryHaskellDepends = [
-    async base bytestring containers unix utf8-string
+    async base bytestring containers unix utf8-string deepseq
   ];
   testHaskellDepends = [
     async base replace-megaparsec unix directory

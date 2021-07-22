@@ -41,7 +41,8 @@ library
     unix ^>= 2.7.2,
     utf8-string ^>= 1.0.2,
     async ^>= 2.2.3,
-    containers ^>= 0.6.2
+    containers ^>= 0.6.2,
+    deepseq ^>= 1.4.4
   default-language: Haskell2010
   ghc-options: -Wall -Wno-name-shadowing
   c-sources: cbits/glue.c
@@ -50,19 +51,30 @@ Test-Suite example
   type: exitcode-stdio-1.0
   main-is: example.hs
   default-language: Haskell2010
-  build-depends: base, procex, async, unix
+  build-depends:
+    base,
+    procex,
+    async,
+    unix
   ghc-options: -threaded -Wall -Wno-name-shadowing
 
-Test-Suite shell
-  build-depends: base, procex, async, utf8-string, replace-megaparsec, bytestring, directory
-  default-extensions:
-    ExtendedDefaultRules,
-    OverloadedStrings
-  default-language: Haskell2010
-  ghc-options: -threaded -Wall -Wno-name-shadowing -Wno-type-defaults
-  hs-source-dirs: ./example-shell
-  main-is: ShellRC.hs
-  type: exitcode-stdio-1.0
+--Test-Suite shell
+--  build-depends:
+--    base,
+--    procex,
+--    async,
+--    utf8-string,
+--    replace-megaparsec ^>= 1.4.4,
+--    bytestring,
+--    directory
+--  default-extensions:
+--    ExtendedDefaultRules,
+--    OverloadedStrings
+--  default-language: Haskell2010
+--  ghc-options: -threaded -Wall -Wno-name-shadowing -Wno-type-defaults
+--  hs-source-dirs: ./example-shell
+--  main-is: ShellRC.hs
+--  type: exitcode-stdio-1.0
 
 --executable procex-example
 --  build-depends: base, procex, async

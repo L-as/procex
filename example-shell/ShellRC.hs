@@ -37,4 +37,4 @@ rebuildSystem flake = do
   mq "sudo" (out <> "/bin/switch-to-configuration") "switch"
 
 diff :: ByteString -> ByteString -> IO ByteString
-diff x y = capture $ mq "diff" (pipeArgStrIn x) (pipeArgStrIn y)
+diff x y = captureLazyNoThrow $ mq "diff" (pipeArgStrIn x) (pipeArgStrIn y)

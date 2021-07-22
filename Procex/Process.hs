@@ -1,4 +1,4 @@
-module Procex.Process (makeCmd, CmdException(..), run, pipeArgIn, pipeArgOut, pipeHIn, pipeHOut, pipeIn, pipeOut, pipeArgHIn, pipeArgHOut, captureFds) where
+module Procex.Process (makeCmd, CmdException (..), run, pipeArgIn, pipeArgOut, pipeHIn, pipeHOut, pipeIn, pipeOut, pipeArgHIn, pipeArgHOut, captureFdsAsHandles, waitCmd) where
 
 import Control.Concurrent.Async
 import Control.Exception.Base
@@ -35,17 +35,23 @@ makeCmd path = unIOCmd $ do
   pure $ makeCmd' fullpath & passArg path & passFd (0, 0) & passFd (1, 1) & passFd (2, 2)
 
 -- | Thrown when the return code of a command isn't 0.
-newtype CmdException = CmdException ProcessStatus deriving Show
+newtype CmdException = CmdException ProcessStatus deriving (Show)
+
 instance Exception CmdException where
   displayException (CmdException status) = "Command failed: " <> show status
+
+-- | Wait on a process status and raise an exception if it is an error
+waitCmd :: Async ProcessStatus -> IO ()
+waitCmd status =
+  wait status >>= \case
+    Exited ExitSuccess -> pure ()
+    e -> throwIO (CmdException e)
 
 -- | Runs a command synchronously. See also 'Procex.Core.run''.
 -- 'CmdException' will be thrown if the command fails.
 run :: Cmd -> IO ()
 run cmd =
-  run' cmd >>= wait >>= \case
-    Exited ExitSuccess -> pure ()
-    e -> throwIO (CmdException e)
+  run' cmd >>= waitCmd
 
 pipeFd' :: Bool -> Fd -> Cmd -> (Fd -> Cmd) -> Cmd
 pipeFd' dir fd1 cmd1 cmd2 = unIOCmd $ do
@@ -159,8 +165,8 @@ pipeArgHOut :: (Async ProcessStatus -> Handle -> IO ()) -> Cmd -> Cmd
 pipeArgHOut = pipeArgH False
 
 -- | Captures the outputs to the specified fds.
-captureFds :: [Fd] -> Cmd -> IO (Async ProcessStatus, [Handle])
-captureFds fds cmd = do
+captureFdsAsHandles :: [Fd] -> Cmd -> IO (Async ProcessStatus, [Handle])
+captureFdsAsHandles fds cmd = do
   fds <- traverse (\wnew -> createPipe >>= \(r, wold) -> pure (wnew, r, wold)) fds
   flip onException (traverse (\(_wnew, r, wold) -> closeFd r >> closeFd wold) fds) $ do
     status <- run' $ foldr (\(wnew, _r, wold) -> passFd (wnew, wold)) cmd fds -- TODO terminate eventually?
