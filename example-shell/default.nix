@@ -20,7 +20,7 @@ let
         inherit sha256;
       };
     in p.callPackage "${src}/procex.nix" {};
-  ghc = pkgs.haskellPackages.ghcWithPackages (p: [p.utf8-string p.async p.replace-megaparsec p.parser-combinators p.pretty-simple (procex p)]);
+  ghc = pkgs.haskellPackages.ghcWithPackages (p: [p.utf8-string p.async p.replace-megaparsec p.pretty-simple (procex p)]);
   args = builtins.concatStringsSep " " [
     "-XExtendedDefaultRules"
     "-XOverloadedStrings"
