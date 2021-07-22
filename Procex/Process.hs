@@ -1,4 +1,4 @@
-module Procex.Process (makeCmd, CmdException, run, pipeArgIn, pipeArgOut, pipeHIn, pipeHOut, pipeIn, pipeOut, pipeArgHIn, pipeArgHOut, captureFd) where
+module Procex.Process (makeCmd, CmdException(..), run, pipeArgIn, pipeArgOut, pipeHIn, pipeHOut, pipeIn, pipeOut, pipeArgHIn, pipeArgHOut, captureFds) where
 
 import Control.Concurrent.Async
 import Control.Exception.Base
@@ -158,11 +158,12 @@ pipeArgHIn = pipeArgH True
 pipeArgHOut :: (Async ProcessStatus -> Handle -> IO ()) -> Cmd -> Cmd
 pipeArgHOut = pipeArgH False
 
--- | Captures the output to the specified fd lazily.
-captureFd :: Fd -> Cmd -> IO ByteString
-captureFd fd cmd =
-  bracketOnError createPipe (\(r, w) -> closeFd r >> closeFd w) $ \(r, w) -> do
-    _ <- run' $ cmd & passFd (fd, w) -- TODO terminate eventually?
-    closeFd w
-    r' <- fdToHandle r
-    B.hGetContents r'
+-- | Captures the outputs to the specified fds.
+captureFds :: [Fd] -> Cmd -> IO (Async ProcessStatus, [Handle])
+captureFds fds cmd = do
+  fds <- traverse (\wnew -> createPipe >>= \(r, wold) -> pure (wnew, r, wold)) fds
+  flip onException (traverse (\(_wnew, r, wold) -> closeFd r >> closeFd wold) fds) $ do
+    status <- run' $ foldr (\(wnew, _r, wold) -> passFd (wnew, wold)) cmd fds -- TODO terminate eventually?
+    mapM_ (\(_wnew, _r, wold) -> closeFd wold) fds
+    handles <- traverse (\(_wnew, r, _wold) -> fdToHandle r) fds
+    pure $ (status, handles)

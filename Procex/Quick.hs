@@ -102,14 +102,14 @@ infixl 1 <<<
 --infixl 1 >>>
 --
 --(>>>) :: QuickCmd a => Cmd -> (ByteString -> IO ()) -> a
---(>>>) cmd handler = quickCmd $ pipeHOut 1 (\_ h -> B.hGetContents h >>= handler >> hClose h) cmd
+--(>>>) cmd handler = quickCmd $ pipeHOut 1 (\_ h -> B.hGetContents h >>= handler) cmd
 
 -- Disabled with same reason as for `>>>`.
 ---- | Handle the output from stderr.
 ----infixl 1 !>>>
 ----
 ----(!>>>) :: QuickCmd a => Cmd -> (ByteString -> IO ()) -> a
-----(!>>>) cmd handler = quickCmd $ pipeHOut 2 (\_ h -> B.hGetContents h >>= handler >> hClose h) cmd
+----(!>>>) cmd handler = quickCmd $ pipeHOut 2 (\_ h -> B.hGetContents h >>= handler) cmd
 
 -- | Pass an argument of the form @\/proc\/self\/fd\/\<n\>@ to the process,
 -- where `n` is the reader end of a pipe which the passed string is written to.
@@ -118,12 +118,12 @@ pipeArgStrIn str = pipeArgHIn (\_ h -> B.hPut h (toByteString str) >> hClose h)
 
 -- Disabled with same reason as for `>>>`.
 --pipeArgStrOut :: (ByteString -> IO ()) -> Cmd -> Cmd
---pipeArgStrOut handler = pipeArgHOut (\_ h -> B.hGetContents h >>= handler >> hClose h)
+--pipeArgStrOut handler = pipeArgHOut (\_ h -> B.hGetContents h >>= handler)
 
 -- | Capture the stdout of the command lazily
 capture :: Cmd -> IO ByteString
-capture = captureFd 1
+capture cmd = captureFds [1] cmd >>= \(_, [h]) -> B.hGetContents h
 
 -- | Capture the stderr of the command lazily
 captureErr :: Cmd -> IO ByteString
-captureErr = captureFd 2
+captureErr cmd = captureFds [2] cmd >>= \(_, [h]) -> B.hGetContents h
