@@ -1,4 +1,4 @@
-module Procex.Shell (promptFunction, initInteractive) where
+module Procex.Shell (promptFunction, initInteractive, cd) where
 
 import System.IO
 import System.Posix.Directory
@@ -19,3 +19,8 @@ promptFunction _modules _line = do
 -- | You need to run this if you want stdin to work properly inside ghci.
 initInteractive :: IO ()
 initInteractive = hSetBuffering stdin LineBuffering
+
+-- | This goes hand-in-hand with 'promptFunction'. It is a standard
+-- 'System.Posix.Directory.changeWorkingDirectory', but it sets "PWD" in the environment too.
+cd :: String -> IO ()
+cd x = changeWorkingDirectory x >> getWorkingDirectory >>= \d -> setEnv "PWD" d True
