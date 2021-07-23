@@ -1,3 +1,5 @@
+{-# LANGUAGE BangPatterns #-}
+
 module Procex.Quick
   ( (<!|),
     (<<<),
@@ -201,7 +203,7 @@ captureFd fd cmd = (\(status, [h]) -> (status, h)) <$> captureFdsAsHandles [fd] 
 capture :: Cmd -> IO ByteString
 capture cmd = do
   (status, [h]) <- captureFdsAsHandles [1] cmd
-  out <- force <$> B.hGetContents h
+  !out <- force <$> B.hGetContents h
   waitCmd status
   pure out
 
@@ -209,7 +211,7 @@ capture cmd = do
 captureNoThrow :: Cmd -> IO ByteString
 captureNoThrow cmd = do
   (status, [h]) <- captureFdsAsHandles [1] cmd
-  out <- force <$> B.hGetContents h
+  !out <- force <$> B.hGetContents h
   _ <- async . cancel $ status
   pure out
 
@@ -217,7 +219,7 @@ captureNoThrow cmd = do
 captureErr :: Cmd -> IO ByteString
 captureErr cmd = do
   (status, [h]) <- captureFdsAsHandles [2] cmd
-  out <- force <$> B.hGetContents h
+  !out <- force <$> B.hGetContents h
   waitCmd status
   pure out
 
@@ -225,6 +227,6 @@ captureErr cmd = do
 captureErrNoThrow :: Cmd -> IO ByteString
 captureErrNoThrow cmd = do
   (status, [h]) <- captureFdsAsHandles [2] cmd
-  out <- force <$> B.hGetContents h
+  !out <- force <$> B.hGetContents h
   _ <- async . cancel $ status
   pure out
