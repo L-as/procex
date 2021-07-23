@@ -25,7 +25,7 @@ The syntax for launching processes is clean, concise, and flexible, mimicking `s
 import Procex.Prelude
 
 main :: IO ()
-main = mq "someexe" <<< "some stdin" >>> \stdout -> putStrLn (show stdout)
+main = captureLazy (mq "cat" <<< "some stdin") >>= \stdout -> putStrLn (show stdout)
 ```
 
 
