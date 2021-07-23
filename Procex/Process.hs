@@ -40,7 +40,7 @@ newtype CmdException = CmdException ProcessStatus deriving (Show)
 instance Exception CmdException where
   displayException (CmdException status) = "Command failed: " <> show status
 
--- | Wait on a process status and raise an exception if it is an error
+-- | Wait on a process status and raise 'CmdException' if it is a non-zero exit code.
 waitCmd :: Async ProcessStatus -> IO ()
 waitCmd status =
   wait status >>= \case

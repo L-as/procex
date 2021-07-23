@@ -15,6 +15,7 @@ module Procex.Quick
     captureErrLazy,
     captureErrLazyNoThrow,
     captureFd,
+    captureFdNoThrow,
     captureFdLazy,
     captureFdLazyNoThrow,
     pipeArgStrIn,
@@ -28,7 +29,7 @@ module Procex.Quick
   )
 where
 
-import Control.Concurrent.Async (Async, async, cancel)
+import Control.Concurrent.Async (Async)
 import Control.DeepSeq (force)
 import qualified Data.ByteString as BS
 import Data.ByteString.Lazy (ByteString)
@@ -36,7 +37,7 @@ import qualified Data.ByteString.Lazy as B
 import qualified Data.ByteString.Lazy.UTF8 as B
 import Procex.Core
 import Procex.Process
-import System.IO (Handle, hClose)
+import System.IO (hClose)
 import System.IO.Unsafe (unsafeInterleaveIO)
 import System.Posix.Process (ProcessStatus)
 import System.Posix.Types (Fd)
@@ -156,77 +157,77 @@ pipeArgStrIn str = pipeArgHIn (\_ h -> B.hPut h (toByteString str) >> hClose h)
 attachFinalizer :: IO () -> ByteString -> IO ByteString
 attachFinalizer finalizer str = B.fromChunks <$> go (B.toChunks str)
   where
-    go :: [BS.ByteString] -> IO [BS.ByteString]
-    go [] = unsafeInterleaveIO $ finalizer >> pure []
-    go (x : xs) = (x :) <$> go xs
+    go' :: [BS.ByteString] -> IO [BS.ByteString]
+    go' [] = finalizer >> pure []
+    go' (x : xs) = (x :) <$> go xs
 
-captureFdLazy' :: Fd -> (Async ProcessStatus -> IO ()) -> Cmd -> IO ByteString
-captureFdLazy' fd finalizer cmd = do
-  (status, [h]) <- captureFdsAsHandles [fd] cmd
-  out <- B.hGetContents h
-  attachFinalizer (finalizer status) out
+    go :: [BS.ByteString] -> IO [BS.ByteString]
+    go = unsafeInterleaveIO . go'
 
 -- | Capture the output of the fd of the command lazily.
 -- If the process exits with a non-zero exit code,
 -- reading from the bytestring will throw 'Procex.Process.CmdException'.
+-- Garbage collection will close the pipe.
 captureFdLazy :: Fd -> Cmd -> IO ByteString
-captureFdLazy fd = captureFdLazy' fd waitCmd
+captureFdLazy fd cmd = do
+  (status, [h]) <- captureFdsAsHandles [fd] cmd
+  out <- B.hGetContents h
+  attachFinalizer (waitCmd status) out
 
 -- | Capture the output of the fd of the command lazily. Ignores process exit code.
+-- Garbage collection will close the pipe.
 captureFdLazyNoThrow :: Fd -> Cmd -> IO ByteString
-captureFdLazyNoThrow fd = captureFdLazy' fd (const $ pure ())
+captureFdLazyNoThrow fd cmd = do
+  (_, [h]) <- captureFdsAsHandles [fd] cmd
+  B.hGetContents h
 
--- | Capture the stdout of the command lazily.
--- If the process exits with a non-zero exit code,
--- reading from the bytestring will throw 'Procex.Process.CmdException'.
+-- | 'captureFdLazy' for stdout.
 captureLazy :: Cmd -> IO ByteString
 captureLazy = captureFdLazy 1
 
--- | Capture the stderr of the command lazily.
--- If the process exits with a non-zero exit code,
--- reading from the bytestring will throw 'Procex.Process.CmdException'.
+-- | 'captureFdLazy' for stderr..
 captureErrLazy :: Cmd -> IO ByteString
 captureErrLazy = captureFdLazy 2
 
--- | Capture the stdout of the command lazily. Ignores process exit code.
+-- | 'captureFdLazyNoThrow' for stdout.
 captureLazyNoThrow :: Cmd -> IO ByteString
 captureLazyNoThrow = captureFdLazyNoThrow 1
 
--- | Capture the stderr of the command lazily. Ignores process exit code.
+-- | 'captureFdLazyNoThrow' for stderr.
 captureErrLazyNoThrow :: Cmd -> IO ByteString
 captureErrLazyNoThrow = captureFdLazyNoThrow 2
 
-captureFd :: Fd -> Cmd -> IO (Async ProcessStatus, Handle)
-captureFd fd cmd = (\(status, [h]) -> (status, h)) <$> captureFdsAsHandles [fd] cmd
+captureFd' :: Fd -> Cmd -> IO (Async ProcessStatus, ByteString)
+captureFd' fd cmd = do
+  (status, [h]) <- captureFdsAsHandles [fd] cmd
+  !out <- force <$> B.hGetContents h
+  pure (status, out)
 
--- | Capture the stdout of the command strictly, err if the command exits with a non-zero exit code.
+-- | Capture the output of the fd of the command strictly, err if the command exits with a non-zero exit code.
+captureFd :: Fd -> Cmd -> IO ByteString
+captureFd fd cmd = do
+  (status, out) <- captureFd' fd cmd
+  waitCmd status
+  pure out
+
+-- | Capture the output of the fd of the command strictly. Ignores process exit code.
+captureFdNoThrow :: Fd -> Cmd -> IO ByteString
+captureFdNoThrow fd cmd = do
+  (_, out) <- captureFd' fd cmd
+  pure out
+
+-- | 'captureFd' for stdout.
 capture :: Cmd -> IO ByteString
-capture cmd = do
-  (status, [h]) <- captureFdsAsHandles [1] cmd
-  !out <- force <$> B.hGetContents h
-  waitCmd status
-  pure out
+capture = captureFd 1
 
--- | Capture the stdout of the command strictly. Ignores process exit code.
+-- | 'captureFdNoThrow' for stdout.
 captureNoThrow :: Cmd -> IO ByteString
-captureNoThrow cmd = do
-  (status, [h]) <- captureFdsAsHandles [1] cmd
-  !out <- force <$> B.hGetContents h
-  _ <- async . cancel $ status
-  pure out
+captureNoThrow = captureFdNoThrow 1
 
--- | Capture the stderr of the command strictly, err if the command exits with a non-zero exit code.
+-- | 'captureFd' for stderr.
 captureErr :: Cmd -> IO ByteString
-captureErr cmd = do
-  (status, [h]) <- captureFdsAsHandles [2] cmd
-  !out <- force <$> B.hGetContents h
-  waitCmd status
-  pure out
+captureErr = captureFd 2
 
--- | Capture the stderr of the command strictly. Ignores process exit code.
+-- | 'captureFdNoThrow' for stderr.
 captureErrNoThrow :: Cmd -> IO ByteString
-captureErrNoThrow cmd = do
-  (status, [h]) <- captureFdsAsHandles [2] cmd
-  !out <- force <$> B.hGetContents h
-  _ <- async . cancel $ status
-  pure out
+captureErrNoThrow = captureFdNoThrow 2
