@@ -55,7 +55,9 @@ Test-Suite example
     base,
     procex,
     async,
-    unix
+    unix,
+    hspec >= 2.7 && < 2.9,
+    bytestring
   ghc-options: -threaded -Wall -Wno-name-shadowing
 
 --Test-Suite shell
@@ -75,10 +77,3 @@ Test-Suite example
 --  hs-source-dirs: ./example-shell
 --  main-is: ShellRC.hs
 --  type: exitcode-stdio-1.0
-
---executable procex-example
---  build-depends: base, procex, async
---  default-language: Haskell2010
---  ghc-options: -threaded -Wall -Wno-name-shadowing
---  hs-source-dirs: .
---  main-is: example.hs
