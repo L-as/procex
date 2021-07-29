@@ -20,12 +20,10 @@ module Procex.Quick
     captureFdLazyNoThrow,
     pipeArgStrIn,
     mq,
-    quickCmd,
-    QuickCmd,
-    quickCmdArg,
-    QuickCmdArg,
-    toByteString,
-    ToByteString,
+    QuickCmd (..),
+    QuickCmdArg (..),
+    QuickCmdArgMultiple (..),
+    ToByteString (..),
   )
 where
 
@@ -35,6 +33,7 @@ import qualified Data.ByteString as BS
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy as B
 import qualified Data.ByteString.Lazy.UTF8 as B
+import Data.Foldable (foldl')
 import Procex.Core
 import Procex.Process
 import System.IO (hClose)
@@ -59,17 +58,35 @@ instance ToByteString BS.ByteString where
 class QuickCmdArg a where
   quickCmdArg :: a -> Cmd -> Cmd
 
+-- | A helper class to allow lightweight syntax for executing commands
 class QuickCmd a where
   quickCmd :: Cmd -> a
 
-instance QuickCmdArg String where
-  quickCmdArg s = passArg $ B.fromString s
+-- | A helper class to allow lightweight syntax for executing commands.
+-- You likely want to use 'QuickCmdArg' instead of this class.
+class QuickCmdArgMultiple a where
+  quickCmdArgMultiple :: [a] -> Cmd -> Cmd
+
+instance QuickCmdArgMultiple Char where
+  quickCmdArgMultiple s = passArg $ B.fromString s
+
+instance QuickCmdArgMultiple String where
+  quickCmdArgMultiple = (flip . foldl' . flip) quickCmdArg
+
+instance QuickCmdArgMultiple ByteString where
+  quickCmdArgMultiple = (flip . foldl' . flip) quickCmdArg
+
+instance QuickCmdArgMultiple (Cmd -> Cmd) where
+  quickCmdArgMultiple = (flip . foldl' . flip) quickCmdArg
 
 instance QuickCmdArg ByteString where
   quickCmdArg = passArg
 
 instance QuickCmdArg (Cmd -> Cmd) where
   quickCmdArg = id
+
+instance QuickCmdArgMultiple a => QuickCmdArg [a] where
+  quickCmdArg = quickCmdArgMultiple
 
 instance {-# OVERLAPPABLE #-} (QuickCmdArg a, QuickCmd b) => QuickCmd (a -> b) where
   quickCmd cmd arg = quickCmd $ quickCmdArg arg cmd

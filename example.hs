@@ -1,21 +1,15 @@
 -- You will need this
 {-# LANGUAGE ExtendedDefaultRules #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# OPTIONS_GHC -Wno-type-defaults #-}
-
 -- You might not need this
 {-# LANGUAGE PackageImports #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE LambdaCase #-}
+{-# OPTIONS_GHC -Wno-type-defaults #-}
 
-import "procex" Procex.Prelude
-import Control.Exception
-import System.Exit
-import Control.Concurrent.Async (wait)
-import System.Posix.Process
-import Control.Monad
-import Test.Hspec
 import qualified Data.ByteString.Lazy as B
+import "procex" Procex.Prelude
+import Test.Hspec
 
 main :: IO ()
 main = hspec $ do
@@ -35,3 +29,8 @@ main = hspec $ do
   describe "run" $ do
     it "throws when cmd fails" $ do
       run (mq "false") `shouldThrow` \(_ :: CmdException) -> True
+
+  describe "QuickCmdArg" $ do
+    it "allows multiple arguments" $ do
+      out <- capture $ mq "echo" ["12", "34"] "56"
+      out `shouldBe` "12 34 56\n"
