@@ -14,7 +14,7 @@ bug-reports: https://github.com/L-as/procex
 license-files:      LICENSE
 license:            Apache-2.0
 author:             Las Safin
-maintainer:         las@protonmail.ch
+maintainer:         me@las.rs
 
 category:           System, Shell
 extra-source-files: CHANGELOG.md
