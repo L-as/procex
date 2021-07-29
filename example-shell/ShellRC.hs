@@ -7,6 +7,7 @@ module ShellRC where
 -- All the imports are also made available to the shell.
 -- They're copied verbatim into the init script.
 import Procex.Prelude
+import Procex.Shell hiding (promptFunction)
 
 -- Useful imports
 import System.Directory
@@ -23,9 +24,11 @@ promptFunction _modules _line = do
   setCurrentDirectory d
   pure $ d <> ": "
 
--- Also needed for the above to work
-cd :: FilePath -> IO ()
-cd dir = setCurrentDirectory dir >> getCurrentDirectory >>= setEnv "PWD"
+-- Run when your shell starts
+_init :: IO ()
+_init = do
+  initInteractive
+  getEnv "REALHOME" >>= setEnv "HOME" -- Set by the script that launches GHCi
 
 -- `nixos-rebuild switch --flake flake` alternative
 rebuildSystem :: String -> IO ()

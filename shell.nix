@@ -7,5 +7,5 @@ in haskellPackages.shellFor {
     ((p.callPackage ./procex.nix {}).override (o: {mkDerivation = mkDerivation p o.mkDerivation;}))
   ];
   buildHoogle = false;
-  buildInputs = [cabal-install cabal2nix];
+  buildInputs = [cabal-install cabal2nix curl];
 }
