@@ -1,3 +1,4 @@
+-- | Contains FFI bindings to the C bits
 module Procex.Execve (Execve, execve, forkexecve) where
 
 import qualified Data.ByteString as BS
@@ -16,7 +17,7 @@ type ExecveRaw =
   CSize ->
   IO CPid
 
--- The signature for 'execve' and 'forkexecve'.
+-- | The signature for 'execve' and 'forkexecve'.
 type Execve =
   -- | The full path to the executable.
   ByteString ->

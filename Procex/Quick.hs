@@ -1,5 +1,7 @@
 {-# LANGUAGE BangPatterns #-}
 
+-- | This module defines functions and type classes
+-- for making the syntax more succint.
 module Procex.Quick
   ( (<!|),
     (<<<),
@@ -54,7 +56,9 @@ instance ToByteString B.ByteString where
 instance ToByteString BS.ByteString where
   toByteString = B.fromStrict
 
--- | A helper class to allow lightweight syntax for executing commands
+-- | If a type implements this, you can pass it to 'mq'.
+-- There is also an instance for 'String', though it's
+-- not obvious.
 class QuickCmdArg a where
   quickCmdArg :: a -> Cmd -> Cmd
 
@@ -62,14 +66,16 @@ class QuickCmdArg a where
 class QuickCmd a where
   quickCmd :: Cmd -> a
 
--- | A helper class to allow lightweight syntax for executing commands.
--- You likely want to use 'QuickCmdArg' instead of this class.
+-- | You likely want to use 'QuickCmdArg' instead of this class,
+-- this is a helper class to allow passing lists of types
+-- that implement `QuickCmdArg`.
 class QuickCmdArgMultiple a where
   quickCmdArgMultiple :: [a] -> Cmd -> Cmd
 
 instance QuickCmdArgMultiple Char where
   quickCmdArgMultiple s = passArg $ B.fromString s
 
+-- | UTF-8 encoded
 instance QuickCmdArgMultiple String where
   quickCmdArgMultiple = (flip . foldl' . flip) quickCmdArg
 
@@ -85,6 +91,7 @@ instance QuickCmdArg ByteString where
 instance QuickCmdArg (Cmd -> Cmd) where
   quickCmdArg = id
 
+-- | You can pass lists of anything that implements 'QuickCmdArg'.
 instance QuickCmdArgMultiple a => QuickCmdArg [a] where
   quickCmdArg = quickCmdArgMultiple
 

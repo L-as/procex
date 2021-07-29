@@ -1,3 +1,7 @@
+-- | You'll likely want to import this if you're
+-- using Procex for your shell, though you'll
+-- likely want to customize your 'promptFunction'
+-- some time.
 module Procex.Shell (promptFunction, initInteractive, cd) where
 
 import System.IO

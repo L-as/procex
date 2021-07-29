@@ -1,3 +1,4 @@
+-- | Defines 'Cmd', the core API of Procex.
 module Procex.Core (Cmd, makeCmd', passArg, unIOCmd, postCmd, run', runReplace, passFd, passArgFd) where
 
 import Control.Concurrent.Async

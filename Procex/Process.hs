@@ -1,3 +1,4 @@
+-- | This module wraps over the API in @Procex.Core@ in a user-friendly way.
 module Procex.Process (makeCmd, CmdException (..), run, pipeArgIn, pipeArgOut, pipeHIn, pipeHOut, pipeIn, pipeOut, pipeArgHIn, pipeArgHOut, captureFdsAsHandles, waitCmd) where
 
 import Control.Concurrent.Async
