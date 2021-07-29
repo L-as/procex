@@ -24,7 +24,7 @@ source-repository head
   location: https://github.com/L-as/procex
 
 library
-  exposed-modules: Procex.Prelude, Procex.Core, Procex.Process, Procex.Execve, Procex.Quick, Procex.Shell
+  exposed-modules: Procex.Prelude, Procex.Core, Procex.Process, Procex.Execve, Procex.Quick, Procex.Shell, Procex.Shell.Labels
 
   default-extensions:
     OverloadedStrings,
@@ -34,6 +34,7 @@ library
     LambdaCase,
     ScopedTypeVariables,
     FlexibleInstances,
+    MultiParamTypeClasses,
     GADTs
   build-depends:
     base >= 4.14.1 && < 4.16,
