@@ -24,7 +24,6 @@ module Procex.Quick
     mq,
     QuickCmd (..),
     QuickCmdArg (..),
-    QuickCmdArgMultiple (..),
     ToByteString (..),
   )
 where
@@ -66,34 +65,24 @@ class QuickCmdArg a where
 class QuickCmd a where
   quickCmd :: Cmd -> a
 
--- | You likely want to use 'QuickCmdArg' instead of this class,
--- this is a helper class to allow passing lists of types
--- that implement `QuickCmdArg`.
-class QuickCmdArgMultiple a where
-  quickCmdArgMultiple :: [a] -> Cmd -> Cmd
-
-instance QuickCmdArgMultiple Char where
-  quickCmdArgMultiple s = passArg $ B.fromString s
+instance QuickCmdArg [Char] where
+  quickCmdArg s = passArg $ B.fromString s
 
 -- | UTF-8 encoded
-instance QuickCmdArgMultiple String where
-  quickCmdArgMultiple = (flip . foldl' . flip) quickCmdArg
+instance QuickCmdArg [String] where
+  quickCmdArg = (flip . foldl' . flip) quickCmdArg
 
-instance QuickCmdArgMultiple ByteString where
-  quickCmdArgMultiple = (flip . foldl' . flip) quickCmdArg
+instance QuickCmdArg [ByteString] where
+  quickCmdArg = (flip . foldl' . flip) quickCmdArg
 
-instance QuickCmdArgMultiple (Cmd -> Cmd) where
-  quickCmdArgMultiple = (flip . foldl' . flip) quickCmdArg
+instance QuickCmdArg [(Cmd -> Cmd)] where
+  quickCmdArg = (flip . foldl' . flip) quickCmdArg
 
 instance QuickCmdArg ByteString where
   quickCmdArg = passArg
 
 instance QuickCmdArg (Cmd -> Cmd) where
   quickCmdArg = id
-
--- | You can pass lists of anything that implements 'QuickCmdArg'.
-instance QuickCmdArgMultiple a => QuickCmdArg [a] where
-  quickCmdArg = quickCmdArgMultiple
 
 instance {-# OVERLAPPABLE #-} (QuickCmdArg a, QuickCmd b) => QuickCmd (a -> b) where
   quickCmd cmd arg = quickCmd $ quickCmdArg arg cmd
