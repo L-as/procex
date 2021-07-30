@@ -13,8 +13,8 @@ let
 
   procex = p:
     let
-      rev = "217ca27285454a4598536c6a0434d3a1f2c4e75e"; # 0.2.3
-      sha256 = "1n5f5kbqv0y84q4di051np2acgnb6mbqkp8lqifwjj83dyfbzk97";
+      rev = "1ff54b7aa75114fbc7d2fd117c67ebf0976aafd8"; # 0.3.0
+      sha256 = "186mvgzsyjm46abf7bqqvci7a4cgq8jd4gp0m88bdqhdinicd924";
       src = builtins.fetchTarball {
         url = "https://github.com/L-as/procex/archive/${rev}.tar.gz";
         inherit sha256;
