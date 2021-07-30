@@ -56,8 +56,6 @@ instance ToByteString BS.ByteString where
   toByteString = B.fromStrict
 
 -- | If a type implements this, you can pass it to 'mq'.
--- There is also an instance for 'String', though it's
--- not obvious.
 class QuickCmdArg a where
   quickCmdArg :: a -> Cmd -> Cmd
 
@@ -65,7 +63,7 @@ class QuickCmdArg a where
 class QuickCmd a where
   quickCmd :: Cmd -> a
 
-instance QuickCmdArg [Char] where
+instance QuickCmdArg String where
   quickCmdArg s = passArg $ B.fromString s
 
 -- | UTF-8 encoded
