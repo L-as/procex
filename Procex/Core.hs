@@ -1,5 +1,5 @@
 -- | Defines 'Cmd', the core API of Procex.
-module Procex.Core (Cmd, makeCmd', passArg, unIOCmd, postCmd, run', runReplace, passFd, passArgFd) where
+module Procex.Core (Cmd, makeCmd', passArg, unIOCmd, postCmd, run', runReplace, passFd, passArgFd, passNoFd) where
 
 import Control.Concurrent.Async
 import Control.Exception.Base
@@ -15,14 +15,14 @@ data Arg = ArgStr ByteString | ArgFd Fd deriving (Show)
 
 data Args = Args
   { args :: [Arg],
-    fds :: [(Fd, Fd)],
+    fds :: [(Fd, Maybe Fd)],
     executor :: Execve
   }
 
 emptyArgs :: Args
 emptyArgs = Args {args = [], fds = [], executor = forkexecve}
 
-fdPrepend :: (Fd, Fd) -> Args -> Args
+fdPrepend :: (Fd, Maybe Fd) -> Args -> Args
 fdPrepend (x, y) args = args {fds = (x, y) : fds args}
 
 argPrepend :: ByteString -> Args -> Args
@@ -39,11 +39,12 @@ newtype Cmd = Cmd {unCmd :: Args -> IO (Async ProcessStatus)}
 -- some sensible defaults, like forwarding stdin, stdout, stderr.
 makeCmd' :: ByteString -> Cmd
 makeCmd' path = Cmd $ \Args {args, fds, executor} -> do
-  let sequentialize_fds :: [(Fd, Fd)] -> S.Seq Fd -> S.Seq Fd
+  let sequentialize_fds :: [(Fd, Maybe Fd)] -> S.Seq Fd -> S.Seq Fd
       sequentialize_fds [] out = out
-      sequentialize_fds ((new, old) : fds) out =
-        let out' = S.update (fromIntegral new) old $ out <> S.replicate (max 0 $ fromIntegral $ fromIntegral new - S.length out + 1) (-1)
-         in sequentialize_fds fds out'
+      sequentialize_fds ((new, Just old) : fds) out =
+        sequentialize_fds fds $ S.update (fromIntegral new) old $ out <> S.replicate (max 0 $ fromIntegral $ fromIntegral new - S.length out + 1) (-1)
+      sequentialize_fds ((new, Nothing) : fds) out =
+        sequentialize_fds fds $ S.update (fromIntegral new) (-1) $ out <> S.replicate (max 0 $ fromIntegral $ fromIntegral new - S.length out + 1) (-1)
   let fds_seq = sequentialize_fds fds []
   let (all_fds, args') =
         foldr
@@ -102,7 +103,16 @@ passFd ::
   (Fd, Fd) ->
   Cmd ->
   Cmd
-passFd fdpair cmd = Cmd $ \args -> unCmd cmd $ fdPrepend fdpair args
+passFd (new, old) cmd = Cmd $ \args -> unCmd cmd $ fdPrepend (new, Just old) args
+
+-- | Don't open a fd in the new process if it was going to be opened by 'passFd'.
+-- Does not affect fds opened by 'passArgFd'.
+passNoFd ::
+  -- | new
+  Fd ->
+  Cmd ->
+  Cmd
+passNoFd new cmd = Cmd $ \args -> unCmd cmd $ fdPrepend (new, Nothing) args
 
 -- | Pass an argument of the form @\/proc\/self\/fd\/\<n\>@ to the process,
 -- where `n` is an fd which is a duplicate of the fd provided here.

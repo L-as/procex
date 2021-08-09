@@ -17,7 +17,7 @@ author:             Las Safin
 maintainer:         me@las.rs
 
 category:           System, Shell
-extra-source-files: CHANGELOG.md
+extra-source-files: CHANGELOG.md, README.md
 
 source-repository head
   type:     git
