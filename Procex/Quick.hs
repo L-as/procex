@@ -37,8 +37,9 @@ import qualified Data.ByteString.Lazy.UTF8 as B
 import Data.Foldable (foldl')
 import Procex.Core
 import Procex.Process
-import System.IO (hClose)
+import System.IO (Handle, hClose)
 import System.IO.Unsafe (unsafeInterleaveIO)
+import System.Posix.IO (handleToFd)
 import System.Posix.Process (ProcessStatus)
 import System.Posix.Types (Fd)
 
@@ -63,10 +64,10 @@ class QuickCmdArg a where
 class QuickCmd a where
   quickCmd :: Cmd -> a
 
+-- | UTF-8 encoded
 instance QuickCmdArg String where
   quickCmdArg s = passArg $ B.fromString s
 
--- | UTF-8 encoded
 instance QuickCmdArg [String] where
   quickCmdArg = (flip . foldl' . flip) quickCmdArg
 
@@ -76,8 +77,32 @@ instance QuickCmdArg [ByteString] where
 instance QuickCmdArg [(Cmd -> Cmd)] where
   quickCmdArg = (flip . foldl' . flip) quickCmdArg
 
+instance (a ~ Fd, b ~ Cmd) => QuickCmdArg [(a, (Handle -> IO b) -> IO b)] where
+  quickCmdArg = (flip . foldl' . flip) quickCmdArg
+
+instance (a ~ Fd) => QuickCmdArg [(a, IO Handle)] where
+  quickCmdArg = (flip . foldl' . flip) quickCmdArg
+
+instance (a ~ Fd) => QuickCmdArg [(a, Handle)] where
+  quickCmdArg = (flip . foldl' . flip) quickCmdArg
+
 instance QuickCmdArg ByteString where
   quickCmdArg = passArg
+
+instance (a ~ Fd, b ~ Cmd) => QuickCmdArg (a, (Handle -> IO b) -> IO b) where
+  quickCmdArg (new, getOld) cmd = unIOCmd . getOld $ \old -> do
+    old <- handleToFd old
+    pure $ passFd (new, old) cmd
+
+instance (a ~ Fd) => QuickCmdArg (a, IO Handle) where
+  quickCmdArg (new, old) cmd = unIOCmd $ do
+    old <- old >>= handleToFd
+    pure $ passFd (new, old) cmd
+
+instance (a ~ Fd) => QuickCmdArg (a, Handle) where
+  quickCmdArg (new, old) cmd = unIOCmd $ do
+    old <- handleToFd old
+    pure $ passFd (new, old) cmd
 
 instance QuickCmdArg (Cmd -> Cmd) where
   quickCmdArg = id

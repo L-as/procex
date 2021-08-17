@@ -10,6 +10,7 @@
 import qualified Data.ByteString.Lazy as B
 import "procex" Procex.Prelude
 import Test.Hspec
+import System.IO (withBinaryFile, IOMode(..))
 
 main :: IO ()
 main = hspec $ do
@@ -34,3 +35,7 @@ main = hspec $ do
     it "allows multiple arguments" $ do
       out <- capture $ mq "echo" ["12", "34"] "56"
       out `shouldBe` "12 34 56\n"
+    it "allows passing temporary handles" $ do
+      license1 <- capture $ mq "cat" (0, withBinaryFile "./LICENSE" ReadMode)
+      license2 <- B.readFile "./LICENSE"
+      license1 `shouldBe` license2
