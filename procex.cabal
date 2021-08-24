@@ -1,6 +1,6 @@
 cabal-version:      2.4
 name:               procex
-version:            0.3.0
+version:            0.3.1
 
 synopsis: Ergonomic process launching with extreme flexibility and speed
 description:
@@ -12,7 +12,7 @@ description:
 bug-reports: https://github.com/L-as/procex
 
 license-files:      LICENSE
-license:            Apache-2.0
+license:            MIT
 author:             Las Safin
 maintainer:         me@las.rs
 
