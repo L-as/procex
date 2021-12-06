@@ -7,18 +7,27 @@
 #include <unistd.h>
 #include <sched.h>
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,9,0)
-#include <linux/close_range.h>
-// glibc does not wrap close_range so we need to do it ourselves.
-static int close_range(unsigned int first) {
-	return syscall(__NR_close_range, first, ~0U, 0);
-}
-#else
-static int close_range(unsigned int first) {
+static int close_range_fallback(unsigned int first) {
 	// There could be fds above FD_SETSIZE, but this might not be a problem
 	// because we reset the soft fd limit to FD_SETSIZE (1024) later.
 	for (unsigned int i = first; i < FD_SETSIZE; i++) close(i);
 	return 0;
+}
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,9,0)
+#include <linux/close_range.h>
+// glibc does not wrap close_range so we need to do it ourselves.
+static int close_range(unsigned int first) {
+	int r = syscall(__NR_close_range, first, ~0U, 0);
+	// unsupported syscall?
+	if (r) {
+		return close_range_fallback(first);
+	} else {
+		return 0;
+	}
+}
+#else
+static int close_range(unsigned int first) {
+	return close_range_fallback(first);
 }
 #endif
 
