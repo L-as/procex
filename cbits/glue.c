@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <sched.h>
 
-static int close_range_fallback(unsigned int first) {
+static int my_close_range_fallback(unsigned int first) {
 	// There could be fds above FD_SETSIZE, but this might not be a problem
 	// because we reset the soft fd limit to FD_SETSIZE (1024) later.
 	for (unsigned int i = first; i < FD_SETSIZE; i++) close(i);
@@ -16,18 +16,18 @@ static int close_range_fallback(unsigned int first) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,9,0)
 #include <linux/close_range.h>
 // glibc does not wrap close_range so we need to do it ourselves.
-static int close_range(unsigned int first) {
+static int my_close_range(unsigned int first) {
 	int r = syscall(__NR_close_range, first, ~0U, 0);
 	// unsupported syscall?
 	if (r) {
-		return close_range_fallback(first);
+		return my_close_range_fallback(first);
 	} else {
 		return 0;
 	}
 }
 #else
-static int close_range(unsigned int first) {
-	return close_range_fallback(first);
+static int my_close_range(unsigned int first) {
+	return my_close_range_fallback(first);
 }
 #endif
 
@@ -64,7 +64,7 @@ int close_execve(
 	}
 
 	// We close all file descriptors that are larger than or equal to fd_count.
-	if (close_range(fd_count) == -1) return -1;
+	if (my_close_range(fd_count) == -1) return -1;
 
 	// Reset fd limit for compatibility with select(), see http://0pointer.net/blog/file-descriptor-limits.html.
 	struct rlimit rl;
