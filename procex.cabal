@@ -1,6 +1,6 @@
 cabal-version:      2.4
 name:               procex
-version:            0.3.1
+version:            0.3.2
 
 synopsis: Ergonomic process launching with extreme flexibility and speed
 description:
