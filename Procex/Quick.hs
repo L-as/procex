@@ -130,34 +130,34 @@ mq path = quickCmd $ makeCmd (toByteString path)
 
 -- | Pipe from the right command to the left command.
 -- Returns the left command modified.
-infixl 1 <|
+infixr 1 <|
 
 (<|) :: QuickCmd a => Cmd -> Cmd -> a
 (<|) x y = quickCmd $ pipeIn 1 0 y x
 
 -- | Pipe from the right command's stderr to the left command.
 -- Returns the left command modified.
-infixl 1 <!|
+infixr 1 <!|
 
 (<!|) :: QuickCmd a => Cmd -> Cmd -> a
 (<!|) x y = quickCmd $ pipeIn 2 0 y x
 
 -- | Pipe from the left command to the right command.
 -- Returns the left command modified.
-infixl 1 |>
+infixr 1 |>
 
 (|>) :: QuickCmd a => Cmd -> Cmd -> a
 (|>) x y = quickCmd $ pipeOut 0 1 y x
 
 -- | Pipe from the left command's stderr to the right command.
 -- Returns the left command modified.
-infixl 1 |!>
+infixr 1 |!>
 
 (|!>) :: QuickCmd a => Cmd -> Cmd -> a
 (|!>) x y = quickCmd $ pipeOut 0 2 y x
 
 -- | Pass a string as stdin.
-infixl 1 <<<
+infix 1 <<<
 
 (<<<) :: (QuickCmd a, ToByteString b) => Cmd -> b -> a
 (<<<) cmd str = quickCmd $ pipeHIn 0 (\_ h -> B.hPut h (toByteString str) >> hClose h) cmd
