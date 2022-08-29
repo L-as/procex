@@ -11,7 +11,7 @@ import Foreign.C.Error (throwErrno)
 import Procex.Execve
 import System.Posix.ByteString
 
-data Arg = ArgStr ByteString | ArgFd Fd deriving (Show)
+data Arg = ArgStr ByteString | ArgFd Fd deriving stock (Show)
 
 data Args = Args
   { args :: [Arg]
@@ -43,9 +43,9 @@ makeCmd' path = Cmd $ \Args {args, fds, executor} -> do
   let sequentialize_fds :: [(Fd, Maybe Fd)] -> S.Seq Fd -> S.Seq Fd
       sequentialize_fds [] out = out
       sequentialize_fds ((new, Just old) : fds) out =
-        sequentialize_fds fds $ S.update (fromIntegral new) old $ out <> S.replicate (max 0 $ fromIntegral $ fromIntegral new - S.length out + 1) (-1)
+        sequentialize_fds fds $ S.update (fromIntegral new) old $ out <> S.replicate (max 0 $ fromIntegral new - S.length out + 1) (-1)
       sequentialize_fds ((new, Nothing) : fds) out =
-        sequentialize_fds fds $ S.update (fromIntegral new) (-1) $ out <> S.replicate (max 0 $ fromIntegral $ fromIntegral new - S.length out + 1) (-1)
+        sequentialize_fds fds $ S.update (fromIntegral new) (-1) $ out <> S.replicate (max 0 $ fromIntegral new - S.length out + 1) (-1)
   let fds_seq = sequentialize_fds fds []
   let (all_fds, args') =
         foldr

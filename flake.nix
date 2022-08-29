@@ -66,6 +66,15 @@
             curl
           ] ++ formattersFor system;
         };
+        raw = with (pkgsFor system); mkShell {
+          nativeBuildInputs = [
+            cabal-install
+            hlint
+            cabal2nix
+            curl
+            haskell.compiler.ghc941
+          ] ++ formattersFor system;
+        };
       });
     };
 }

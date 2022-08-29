@@ -9,7 +9,7 @@
 
  NB: @_@ is replaced with @-@.
 -}
-module Procex.Shell.Labels where
+module Procex.Shell.Labels () where
 
 import Data.Functor
 import Data.Proxy (Proxy (..))

@@ -37,7 +37,7 @@ makeCmd path = unIOCmd $ do
   pure $ makeCmd' fullpath & passArg path & passFd (0, 0) & passFd (1, 1) & passFd (2, 2)
 
 -- | Thrown when the return code of a command isn't 0.
-newtype CmdException = CmdException ProcessStatus deriving (Show)
+newtype CmdException = CmdException ProcessStatus deriving stock (Show)
 
 instance Exception CmdException where
   displayException (CmdException status) = "Command failed: " <> show status
