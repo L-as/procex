@@ -17,7 +17,7 @@
       formattersFor = system: with (pkgsFor system); [
         nixpkgs-fmt
         haskellPackages.cabal-fmt
-        (haskell.lib.compose.overrideCabal (_:{doCheck = false;}) (hsPkgsFor system).fourmolu_0_8_0_0)
+        (haskell.lib.compose.overrideCabal (_: { doCheck = false; }) (hsPkgsFor system).fourmolu_0_8_0_0)
       ];
       regen = system: (pkgsFor system).writeShellApplication {
         name = "regen";

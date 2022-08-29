@@ -1,20 +1,22 @@
-{-# OPTIONS_GHC -Wno-unused-imports -Wno-missing-signatures #-} -- Only needed if you're using this for a shell
-
 {-# LANGUAGE NoMonomorphismRestriction #-}
+-- Only needed if you're using this for a shell
+{-# OPTIONS_GHC -Wno-unused-imports -Wno-missing-signatures #-}
 
 module ShellRC where
-  
+
 -- All the imports are also made available to the shell.
 -- They're copied verbatim into the init script.
 import Procex.Prelude
 import Procex.Shell hiding (promptFunction)
 
 -- Useful imports
-import System.Directory
-import System.Environment
-import Replace.Megaparsec -- from `replace-megaparsec` package
+
+-- from `replace-megaparsec` package
 import Data.ByteString.Lazy as B
 import qualified Data.ByteString.Lazy.UTF8 as BU
+import Replace.Megaparsec
+import System.Directory
+import System.Environment
 
 -- Our prompt
 promptFunction :: [String] -> Int -> IO String

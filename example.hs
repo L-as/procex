@@ -9,8 +9,8 @@
 
 import qualified Data.ByteString.Lazy as B
 import "procex" Procex.Prelude
+import System.IO (IOMode (..), withBinaryFile)
 import Test.Hspec
-import System.IO (withBinaryFile, IOMode(..))
 
 main :: IO ()
 main = hspec $ do

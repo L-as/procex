@@ -1,32 +1,32 @@
 {-# LANGUAGE BangPatterns #-}
 
--- | This module defines functions and type classes
--- for making the syntax more succint.
-module Procex.Quick
-  ( (<!|),
-    (<<<),
-    (<|),
-    (|!>),
-    (|>),
-    capture,
-    captureNoThrow,
-    captureLazy,
-    captureLazyNoThrow,
-    captureErr,
-    captureErrNoThrow,
-    captureErrLazy,
-    captureErrLazyNoThrow,
-    captureFd,
-    captureFdNoThrow,
-    captureFdLazy,
-    captureFdLazyNoThrow,
-    pipeArgStrIn,
-    mq,
-    QuickCmd (..),
-    QuickCmdArg (..),
-    ToByteString (..),
-  )
-where
+{- | This module defines functions and type classes
+ for making the syntax more succint.
+-}
+module Procex.Quick (
+  (<!|),
+  (<<<),
+  (<|),
+  (|!>),
+  (|>),
+  capture,
+  captureNoThrow,
+  captureLazy,
+  captureLazyNoThrow,
+  captureErr,
+  captureErrNoThrow,
+  captureErrLazy,
+  captureErrLazyNoThrow,
+  captureFd,
+  captureFdNoThrow,
+  captureFdLazy,
+  captureFdLazyNoThrow,
+  pipeArgStrIn,
+  mq,
+  QuickCmd (..),
+  QuickCmdArg (..),
+  ToByteString (..),
+) where
 
 import Control.Concurrent.Async (Async)
 import Control.DeepSeq (force)
@@ -116,10 +116,11 @@ instance (a ~ ()) => QuickCmd (IO a) where
 instance QuickCmd Cmd where
   quickCmd = id
 
--- | >>> mq "cat" "/dev/null" (pipeArgIn 1 $ mq "cat" "/dev/null") <<< "somestr"
---
--- The first argument is the path, and the subsequent arguments are 'QuickCmdArg'.
--- At the end you will either have an @IO ()@ (synchronous execution) or 'Cmd' (which you can further use).
+{- | >>> mq "cat" "/dev/null" (pipeArgIn 1 $ mq "cat" "/dev/null") <<< "somestr"
+
+ The first argument is the path, and the subsequent arguments are 'QuickCmdArg'.
+ At the end you will either have an @IO ()@ (synchronous execution) or 'Cmd' (which you can further use).
+-}
 mq ::
   (QuickCmd a, ToByteString b) =>
   -- | The path to the executable, uses PATH
@@ -128,29 +129,33 @@ mq ::
   a
 mq path = quickCmd $ makeCmd (toByteString path)
 
--- | Pipe from the right command to the left command.
--- Returns the left command modified.
+{- | Pipe from the right command to the left command.
+ Returns the left command modified.
+-}
 infixr 1 <|
 
 (<|) :: QuickCmd a => Cmd -> Cmd -> a
 (<|) x y = quickCmd $ pipeIn 1 0 y x
 
--- | Pipe from the right command's stderr to the left command.
--- Returns the left command modified.
+{- | Pipe from the right command's stderr to the left command.
+ Returns the left command modified.
+-}
 infixr 1 <!|
 
 (<!|) :: QuickCmd a => Cmd -> Cmd -> a
 (<!|) x y = quickCmd $ pipeIn 2 0 y x
 
--- | Pipe from the left command to the right command.
--- Returns the left command modified.
+{- | Pipe from the left command to the right command.
+ Returns the left command modified.
+-}
 infixr 1 |>
 
 (|>) :: QuickCmd a => Cmd -> Cmd -> a
 (|>) x y = quickCmd $ pipeOut 0 1 y x
 
--- | Pipe from the left command's stderr to the right command.
--- Returns the left command modified.
+{- | Pipe from the left command's stderr to the right command.
+ Returns the left command modified.
+-}
 infixr 1 |!>
 
 (|!>) :: QuickCmd a => Cmd -> Cmd -> a
@@ -169,10 +174,10 @@ infix 1 <<<
 -- when our foreground is done executing, it will not wait for the background threads
 -- to stop executing too.
 ---- | Handle the output from stdout.
---infixl 1 >>>
+-- infixl 1 >>>
 --
---(>>>) :: QuickCmd a => Cmd -> (ByteString -> IO ()) -> a
---(>>>) cmd handler = quickCmd $ pipeHOut 1 (\_ h -> B.hGetContents h >>= handler) cmd
+-- (>>>) :: QuickCmd a => Cmd -> (ByteString -> IO ()) -> a
+-- (>>>) cmd handler = quickCmd $ pipeHOut 1 (\_ h -> B.hGetContents h >>= handler) cmd
 
 -- Disabled with same reason as for `>>>`.
 ---- | Handle the output from stderr.
@@ -181,14 +186,15 @@ infix 1 <<<
 ----(!>>>) :: QuickCmd a => Cmd -> (ByteString -> IO ()) -> a
 ----(!>>>) cmd handler = quickCmd $ pipeHOut 2 (\_ h -> B.hGetContents h >>= handler) cmd
 
--- | Pass an argument of the form @\/proc\/self\/fd\/\<n\>@ to the process,
--- where `n` is the reader end of a pipe which the passed string is written to.
+{- | Pass an argument of the form @\/proc\/self\/fd\/\<n\>@ to the process,
+ where `n` is the reader end of a pipe which the passed string is written to.
+-}
 pipeArgStrIn :: ToByteString b => b -> Cmd -> Cmd
 pipeArgStrIn str = pipeArgHIn (\_ h -> B.hPut h (toByteString str) >> hClose h)
 
 -- Disabled with same reason as for `>>>`.
---pipeArgStrOut :: (ByteString -> IO ()) -> Cmd -> Cmd
---pipeArgStrOut handler = pipeArgHOut (\_ h -> B.hGetContents h >>= handler)
+-- pipeArgStrOut :: (ByteString -> IO ()) -> Cmd -> Cmd
+-- pipeArgStrOut handler = pipeArgHOut (\_ h -> B.hGetContents h >>= handler)
 
 attachFinalizer :: IO () -> ByteString -> IO ByteString
 attachFinalizer finalizer str = B.fromChunks <$> go (B.toChunks str)
@@ -200,18 +206,20 @@ attachFinalizer finalizer str = B.fromChunks <$> go (B.toChunks str)
     go :: [BS.ByteString] -> IO [BS.ByteString]
     go = unsafeInterleaveIO . go'
 
--- | Capture the output of the fd of the command lazily.
--- If the process exits with a non-zero exit code,
--- reading from the bytestring will throw 'Procex.Process.CmdException'.
--- Garbage collection will close the pipe.
+{- | Capture the output of the fd of the command lazily.
+ If the process exits with a non-zero exit code,
+ reading from the bytestring will throw 'Procex.Process.CmdException'.
+ Garbage collection will close the pipe.
+-}
 captureFdLazy :: Fd -> Cmd -> IO ByteString
 captureFdLazy fd cmd = do
   (status, [h]) <- captureFdsAsHandles [fd] cmd
   out <- B.hGetContents h
   attachFinalizer (waitCmd status) out
 
--- | Capture the output of the fd of the command lazily. Ignores process exit code.
--- Garbage collection will close the pipe.
+{- | Capture the output of the fd of the command lazily. Ignores process exit code.
+ Garbage collection will close the pipe.
+-}
 captureFdLazyNoThrow :: Fd -> Cmd -> IO ByteString
 captureFdLazyNoThrow fd cmd = do
   (_, [h]) <- captureFdsAsHandles [fd] cmd

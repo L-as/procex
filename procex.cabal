@@ -1,64 +1,76 @@
 cabal-version:      3.0
 name:               procex
 version:            0.3.3
+synopsis:
+  Ergonomic process launching with extreme flexibility and speed
 
-synopsis: Ergonomic process launching with extreme flexibility and speed
 description:
   procex is a library for launching unix processes, that DOES NOT wrap createProcess.
   It interfaces directly with vfork and execve, and closes fds efficiently using
   the new close_range Linux syscall (or close if not available).
   The syntax for launching processes is clean, concise, and flexible, mimicking sh.
-bug-reports: https://github.com/L-as/procex
 
+bug-reports:        https://github.com/L-as/procex
 license-files:      LICENSE
 license:            MIT
 author:             Las Safin
 maintainer:         me@las.rs
-
 category:           System, Shell
-extra-source-files: CHANGELOG.md, README.md
+extra-source-files:
+  CHANGELOG.md
+  README.md
 
 source-repository head
   type:     git
   location: https://github.com/L-as/procex
 
 library
-  exposed-modules: Procex.Prelude, Procex.Core, Procex.Process, Procex.Execve, Procex.Quick, Procex.Shell, Procex.Shell.Labels
+  exposed-modules:
+    Procex.Core
+    Procex.Execve
+    Procex.Prelude
+    Procex.Process
+    Procex.Quick
+    Procex.Shell
+    Procex.Shell.Labels
 
   default-extensions:
-    OverloadedStrings,
-    OverloadedLists,
-    NamedFieldPuns,
-    RecordWildCards,
-    LambdaCase,
-    ScopedTypeVariables,
-    FlexibleInstances,
-    MultiParamTypeClasses,
+    FlexibleInstances
     GADTs
-  build-depends:
-    base >= 4.14.1 && < 5,
-    bytestring >= 0.10.12 && < 0.12,
-    unix >= 2.7 && < 2.9,
-    utf8-string ^>= 1.0.2,
-    async ^>= 2.2.3,
-    containers ^>= 0.6.2,
-    deepseq ^>= 1.4.4
-  default-language: Haskell2010
-  ghc-options: -Wall -Wno-name-shadowing
-  c-sources: cbits/glue.c
+    LambdaCase
+    MultiParamTypeClasses
+    NamedFieldPuns
+    OverloadedLists
+    OverloadedStrings
+    RecordWildCards
+    ScopedTypeVariables
 
-Test-Suite example
-  type: exitcode-stdio-1.0
-  main-is: example.hs
+  build-depends:
+    , async        ^>=2.2.3
+    , base         >=4.14.1  && <5
+    , bytestring   >=0.10.12 && <0.12
+    , containers   ^>=0.6.2
+    , deepseq      ^>=1.4.4
+    , unix         >=2.7     && <2.9
+    , utf8-string  ^>=1.0.2
+
+  default-language:   Haskell2010
+  ghc-options:        -Wall -Wno-name-shadowing
+  c-sources:          cbits/glue.c
+
+test-suite example
+  type:             exitcode-stdio-1.0
+  main-is:          example.hs
   default-language: Haskell2010
   build-depends:
-    base,
-    procex,
-    async,
-    unix,
-    hspec >= 2.7,
-    bytestring
-  ghc-options: -threaded -Wall -Wno-name-shadowing
+    , async
+    , base
+    , bytestring
+    , hspec       >=2.7
+    , procex
+    , unix
+
+  ghc-options:      -threaded -Wall -Wno-name-shadowing
 
 --Test-Suite shell
 --  build-depends:

@@ -14,9 +14,9 @@ import System.Posix.ByteString
 data Arg = ArgStr ByteString | ArgFd Fd deriving (Show)
 
 data Args = Args
-  { args :: [Arg],
-    fds :: [(Fd, Maybe Fd)],
-    executor :: Execve
+  { args :: [Arg]
+  , fds :: [(Fd, Maybe Fd)]
+  , executor :: Execve
   }
 
 emptyArgs :: Args
@@ -34,9 +34,10 @@ argFdPrepend arg Args {..} = Args {args = ArgFd arg : args, ..}
 -- | A command. You can execute this with 'run'' or 'Procex.Process.run'.
 newtype Cmd = Cmd {unCmd :: Args -> IO (Async ProcessStatus)}
 
--- | Make a 'Cmd' from the path to an executable. Does not take PATH into account.
--- See 'Procex.Process.makeCmd' for a version that provides
--- some sensible defaults, like forwarding stdin, stdout, stderr.
+{- | Make a 'Cmd' from the path to an executable. Does not take PATH into account.
+ See 'Procex.Process.makeCmd' for a version that provides
+ some sensible defaults, like forwarding stdin, stdout, stderr.
+-}
 makeCmd' :: ByteString -> Cmd
 makeCmd' path = Cmd $ \Args {args, fds, executor} -> do
   let sequentialize_fds :: [(Fd, Maybe Fd)] -> S.Seq Fd -> S.Seq Fd
@@ -65,15 +66,17 @@ makeCmd' path = Cmd $ \Args {args, fds, executor} -> do
       Just status -> pure status
       Nothing -> throwErrno "getProcessStatus returned Nothing"
 
--- | Embeds the IO action inside the command, such that the IO action
--- is executed when the command is executed.
+{- | Embeds the IO action inside the command, such that the IO action
+ is executed when the command is executed.
+-}
 unIOCmd :: IO Cmd -> Cmd
 unIOCmd cmd = Cmd $ \args -> do
   cmd <- cmd
   unCmd cmd args
 
--- | Executes some code after launching the process. If launching the process
--- fails, it will be provided with the exception it failed with.
+{- | Executes some code after launching the process. If launching the process
+ fails, it will be provided with the exception it failed with.
+-}
 postCmd :: (Either SomeException (Async ProcessStatus) -> IO ()) -> Cmd -> Cmd
 postCmd f cmd = Cmd $ \args -> do
   r <- try (unCmd cmd args)
@@ -82,13 +85,15 @@ postCmd f cmd = Cmd $ \args -> do
     Left e -> throwIO e
     Right p -> pure p
 
--- | Runs the specified command asynchronously and returns
--- the process status.
+{- | Runs the specified command asynchronously and returns
+ the process status.
+-}
 run' :: Cmd -> IO (Async ProcessStatus)
 run' cmd = unCmd cmd emptyArgs
 
--- | Runs the specified commands and replaces the current process with it.
--- This will not return unless an error occurs while executing the process.
+{- | Runs the specified commands and replaces the current process with it.
+ This will not return unless an error occurs while executing the process.
+-}
 runReplace :: Cmd -> IO ()
 runReplace cmd = const () <$> unCmd cmd emptyArgs {executor = execve}
 
@@ -96,8 +101,9 @@ runReplace cmd = const () <$> unCmd cmd emptyArgs {executor = execve}
 passArg :: ByteString -> Cmd -> Cmd
 passArg str cmd = Cmd $ \args -> unCmd cmd $ argPrepend str args
 
--- | Bind a fd in the new process to a fd available now.
--- If you try to bind an fd already bound, it will simply replace the older binding.
+{- | Bind a fd in the new process to a fd available now.
+ If you try to bind an fd already bound, it will simply replace the older binding.
+-}
 passFd ::
   -- | (new, old)
   (Fd, Fd) ->
@@ -105,8 +111,9 @@ passFd ::
   Cmd
 passFd (new, old) cmd = Cmd $ \args -> unCmd cmd $ fdPrepend (new, Just old) args
 
--- | Don't open a fd in the new process if it was going to be opened by 'passFd'.
--- Does not affect fds opened by 'passArgFd'.
+{- | Don't open a fd in the new process if it was going to be opened by 'passFd'.
+ Does not affect fds opened by 'passArgFd'.
+-}
 passNoFd ::
   -- | new
   Fd ->
@@ -114,7 +121,8 @@ passNoFd ::
   Cmd
 passNoFd new cmd = Cmd $ \args -> unCmd cmd $ fdPrepend (new, Nothing) args
 
--- | Pass an argument of the form @\/proc\/self\/fd\/\<n\>@ to the process,
--- where `n` is an fd which is a duplicate of the fd provided here.
+{- | Pass an argument of the form @\/proc\/self\/fd\/\<n\>@ to the process,
+ where `n` is an fd which is a duplicate of the fd provided here.
+-}
 passArgFd :: Fd -> Cmd -> Cmd
 passArgFd fd cmd = Cmd $ \args -> unCmd cmd $ argFdPrepend fd args

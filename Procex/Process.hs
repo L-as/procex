@@ -20,8 +20,9 @@ findM f (x : xs) =
     False -> findM f xs
 findM _ [] = pure Nothing
 
--- | A version of 'Procex.Core.makeCmd'' that resolves the path
--- according to PATH and passes through stdin, stdout and stderr (unless overrided).
+{- | A version of 'Procex.Core.makeCmd'' that resolves the path
+ according to PATH and passes through stdin, stdout and stderr (unless overrided).
+-}
 makeCmd :: ByteString -> Cmd
 makeCmd path = unIOCmd $ do
   fullpath :: ByteString <-
@@ -48,8 +49,9 @@ waitCmd status =
     Exited ExitSuccess -> pure ()
     e -> throwIO (CmdException e)
 
--- | Runs a command synchronously. See also 'Procex.Core.run''.
--- 'CmdException' will be thrown if the command fails.
+{- | Runs a command synchronously. See also 'Procex.Core.run''.
+ 'CmdException' will be thrown if the command fails.
+-}
 run :: Cmd -> IO ()
 run cmd =
   run' cmd >>= waitCmd
@@ -71,9 +73,10 @@ pipeArgFd dir fd cmd1 cmd2 = pipeFd' dir fd cmd1 (\y -> passArgFd y cmd2)
 pipeFd :: Bool -> Fd -> Fd -> Cmd -> Cmd -> Cmd
 pipeFd dir fd1 fd2 cmd1 cmd2 = pipeFd' dir fd1 cmd1 (\y -> passFd (fd2, y) cmd2)
 
--- | Pass an argument of the form @\/proc\/self\/fd\/\<n\>@ to the process,
--- where `n` is the reader end of a pipe which the command
--- writes to through the specified fd.
+{- | Pass an argument of the form @\/proc\/self\/fd\/\<n\>@ to the process,
+ where `n` is the reader end of a pipe which the command
+ writes to through the specified fd.
+-}
 pipeArgIn ::
   -- | The fd the command will write to
   Fd ->
@@ -84,9 +87,10 @@ pipeArgIn ::
   Cmd
 pipeArgIn = pipeArgFd True
 
--- | Pass an argument of the form @\/proc\/self\/fd\/\<n\>@ to the process,
--- where `n` is the writer end of a pipe which the command
--- reads from through the specified fd.
+{- | Pass an argument of the form @\/proc\/self\/fd\/\<n\>@ to the process,
+ where `n` is the writer end of a pipe which the command
+ reads from through the specified fd.
+-}
 pipeArgOut ::
   -- | The fd the command will read from
   Fd ->
@@ -153,15 +157,17 @@ pipeHOut = pipeH False
 pipeArgH :: Bool -> (Async ProcessStatus -> Handle -> IO ()) -> Cmd -> Cmd
 pipeArgH dir handler cmd = pipeH' dir handler (\fd -> passArgFd fd cmd)
 
--- | Pass an argument of the form @\/proc\/self\/fd\/\<n\>@ to the process,
--- where `n` is the reader end of a pipe where the writer end is passed
--- to a Haskell function.
+{- | Pass an argument of the form @\/proc\/self\/fd\/\<n\>@ to the process,
+ where `n` is the reader end of a pipe where the writer end is passed
+ to a Haskell function.
+-}
 pipeArgHIn :: (Async ProcessStatus -> Handle -> IO ()) -> Cmd -> Cmd
 pipeArgHIn = pipeArgH True
 
--- | Pass an argument of the form @\/proc\/self\/fd\/\<n\>@ to the process,
--- where `n` is the writer end of a pipe where the reader end is passed
--- to a Haskell function.
+{- | Pass an argument of the form @\/proc\/self\/fd\/\<n\>@ to the process,
+ where `n` is the writer end of a pipe where the reader end is passed
+ to a Haskell function.
+-}
 pipeArgHOut :: (Async ProcessStatus -> Handle -> IO ()) -> Cmd -> Cmd
 pipeArgHOut = pipeArgH False
 

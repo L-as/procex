@@ -35,8 +35,8 @@ foreign import ccall "vfork_close_execve" c_vfork_close_execve :: ExecveRaw
 
 foreign import ccall "close_execve" c_close_execve :: ExecveRaw
 
---foreign import ccall "execve" c_execve :: Ptr CChar -> Ptr (Ptr CChar) -> Ptr (Ptr CChar) -> IO ()
---foreign import ccall "&environ" c_environ :: Ptr (Ptr CChar)
+-- foreign import ccall "execve" c_execve :: Ptr CChar -> Ptr (Ptr CChar) -> Ptr (Ptr CChar) -> IO ()
+-- foreign import ccall "&environ" c_environ :: Ptr (Ptr CChar)
 
 exec' :: ExecveRaw -> ByteString -> [ByteString] -> Maybe [ByteString] -> [Fd] -> IO CPid
 exec' f path args env fds = do
