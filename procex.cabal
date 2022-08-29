@@ -24,6 +24,11 @@ source-repository head
   type:     git
   location: https://github.com/L-as/procex
 
+flag develop
+  description: develop
+  default: False
+  manual: True
+
 library
   exposed-modules:
     Procex.Core
@@ -57,15 +62,18 @@ library
     , utf8-string  ^>=1.0.2
 
   default-language:   Haskell2010
-  ghc-options:
-    -Weverything -Wno-unused-do-bind -Wno-missing-kind-signatures
-    -Werror -Wno-implicit-prelude -Wno-name-shadowing -Wno-safe -Wno-unsafe
-    -Wno-missing-safe-haskell-mode -Wno-missing-local-signatures
-    -Wno-prepositive-qualified-module -Wno-missing-import-lists
-    -Wno-all-missed-specializations -Wno-unticked-promoted-constructors
-    -Wno-name-shadowing
-    -fprint-explicit-kinds -fprint-explicit-coercions
-    -fprint-equality-relations -fprint-explicit-foralls
+  if flag(develop)
+    ghc-options:
+      -Weverything -Wno-unused-do-bind -Wno-missing-kind-signatures
+      -Werror -Wno-implicit-prelude -Wno-name-shadowing -Wno-safe -Wno-unsafe
+      -Wno-missing-safe-haskell-mode -Wno-missing-local-signatures
+      -Wno-prepositive-qualified-module -Wno-missing-import-lists
+      -Wno-all-missed-specializations -Wno-unticked-promoted-constructors
+      -Wno-name-shadowing
+      -fprint-explicit-kinds -fprint-explicit-coercions
+      -fprint-equality-relations -fprint-explicit-foralls
+  else
+    ghc-options: -Wall -Wno-name-shadowing
   c-sources:          cbits/glue.c
 
 test-suite example
