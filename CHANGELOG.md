@@ -1,5 +1,9 @@
 # Revision history for procex
 
+## 0.3.3 -- 2022-08-29
+
+- Fix associativities of piping operators
+
 ## 0.3.2 -- 2022-04-24
 
 - Fix support for newer glibcs that already define `close_range`
