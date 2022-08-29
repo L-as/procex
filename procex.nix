@@ -1,19 +1,14 @@
-{ mkDerivation, async, base, bytestring, containers, lib, unix
-, utf8-string, replace-megaparsec, directory, deepseq, hspec
+{ mkDerivation, async, base, bytestring, containers, deepseq, hspec
+, lib, unix, utf8-string
 }:
 mkDerivation {
   pname = "procex";
-  version = "0.1.0.0";
+  version = "0.3.3";
   src = ./.;
-  isLibrary = true;
   libraryHaskellDepends = [
-    async base bytestring containers unix utf8-string deepseq
+    async base bytestring containers deepseq unix utf8-string
   ];
-  testHaskellDepends = [
-    async base replace-megaparsec unix directory hspec
-  ];
-  license = lib.licenses.asl20;
-  hydraPlatforms = lib.platforms.none;
-  doHaddock = false;
-  doCheck = false;
+  testHaskellDepends = [ async base bytestring hspec unix ];
+  description = "Ergonomic process launching with extreme flexibility and speed";
+  license = lib.licenses.mit;
 }

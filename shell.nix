@@ -1,10 +1,9 @@
-{ pkgs ? import <nixpkgs> {} }:
+{ pkgs ? import (builtins.storePath /nix/store/sjmq1gphj1arbzf4aqqnygd9pf4hkfkf-source) {} }:
 with pkgs;
-let
-  mkDerivation = p: old: arg: old (arg // {libraryHaskellDepends = arg.libraryHaskellDepends ++ arg.testHaskellDepends;});
-in haskell.packages.ghc922.shellFor {
+let hspkgs = haskell.packages.ghc924; in
+hspkgs.shellFor {
   packages = p: [
-    ((p.callPackage ./procex.nix {}).override (o: {mkDerivation = mkDerivation p o.mkDerivation;}))
+    (p.callPackage ./procex.nix { hspec = p.hspec_2_10_0_1; })
   ];
   buildHoogle = false;
   buildInputs = [ cabal-install cabal2nix curl ];

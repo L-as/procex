@@ -1,6 +1,6 @@
-cabal-version:      2.4
+cabal-version:      3.0
 name:               procex
-version:            0.3.2
+version:            0.3.3
 
 synopsis: Ergonomic process launching with extreme flexibility and speed
 description:
@@ -8,7 +8,6 @@ description:
   It interfaces directly with vfork and execve, and closes fds efficiently using
   the new close_range Linux syscall (or close if not available).
   The syntax for launching processes is clean, concise, and flexible, mimicking sh.
-
 bug-reports: https://github.com/L-as/procex
 
 license-files:      LICENSE
@@ -37,9 +36,9 @@ library
     MultiParamTypeClasses,
     GADTs
   build-depends:
-    base >= 4.14.1 && < 4.17,
+    base >= 4.14.1 && < 5,
     bytestring >= 0.10.12 && < 0.12,
-    unix ^>= 2.7.2,
+    unix >= 2.7 && < 2.9,
     utf8-string ^>= 1.0.2,
     async ^>= 2.2.3,
     containers ^>= 0.6.2,
@@ -57,7 +56,7 @@ Test-Suite example
     procex,
     async,
     unix,
-    hspec >= 2.7 && < 2.9,
+    hspec >= 2.7,
     bytestring
   ghc-options: -threaded -Wall -Wno-name-shadowing
 
